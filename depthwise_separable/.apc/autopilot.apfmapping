@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<autopilotfilemapping:AutoPilotFileMapping xmlns:autopilotfilemapping="www.autoesl.com/autopilotfilemapping">
+  <source>
+    <originFiles name="bn_qrelu2d.h" path="C:\Users\31392\Desktop\bachelor_thesis\My_code\conv_1\depthwise_separable\bn_qrelu2d.h"/>
+    <originFiles name="conv2d.h" path="C:\Users\31392\Desktop\bachelor_thesis\My_code\conv_1\depthwise_separable\conv2d.h"/>
+    <originFiles name="function.h" path="C:\Users\31392\Desktop\bachelor_thesis\My_code\conv_1\depthwise_separable\function.h"/>
+    <originFiles name="matrix_vector_unit.h" path="C:\Users\31392\Desktop\bachelor_thesis\My_code\conv_1\depthwise_separable\matrix_vector_unit.h"/>
+    <originFiles name="sliding_window_unit.h" path="C:\Users\31392\Desktop\bachelor_thesis\My_code\conv_1\depthwise_separable\sliding_window_unit.h"/>
+    <originFiles name="stream_tools.h" path="C:\Users\31392\Desktop\bachelor_thesis\My_code\conv_1\depthwise_separable\stream_tools.h"/>
+  </source>
+  <testbench>
+    <originFiles name="conv_test.cpp" path="C:\Users\31392\Desktop\bachelor_thesis\My_code\conv_1\depthwise_separable\conv_test.cpp"/>
+  </testbench>
+</autopilotfilemapping:AutoPilotFileMapping>
