@@ -181,7 +181,7 @@ ap_uint<OUT_BIT> bn_qurelu_no( ap_int<IN_BIT> in,
 	} else {
 		res = 0;
 	}
-	cout << " this is BN_ACT " << endl;
+	//cout << " this is BN_ACT " << endl;
 	return res;
 
 }
@@ -200,8 +200,40 @@ ap_uint<OUT_BIT> bn_qurelu_linear( ap_int<IN_BIT> in,
 
 	ap_int<IN_BIT> bn_res = in * inc + bias; // this is the BN output?
 	ap_uint<OUT_BIT> res;
-	cout << " this is linear " << endl;
+	//cout << " this is linear " << endl;
 	res = bn_res;
 	return res;
 
+}
+template<
+			unsigned BIT,
+
+			unsigned CH
+
+		>
+ap_uint<CH*BIT> adder(
+			ap_uint<CH*BIT> add1,
+			ap_uint<CH*BIT> add2
+		)
+{
+		ap_uint<CH*BIT> res;
+		ap_uint<BIT> add1_temp;
+		ap_uint<BIT> add2_temp;
+		ap_uint<BIT> res_temp;
+		//cout << "add1 = " <<bitset<CH*BIT>(add1) <<endl;
+		//cout << "add2 = " <<bitset<CH*BIT>(add2) <<endl;
+
+		for(int i = 0 ;i<CH;i++){
+				add1_temp = add1(CH*BIT-1,(CH-1)*BIT);
+				//cout << "add_1 temp" << bitset<BIT> (add1_temp) << endl;
+				add2_temp = add2(CH*BIT-1,CH*BIT-BIT);
+
+				res_temp  = add1_temp + add2_temp;
+				//cout << "res temp" << bitset<BIT> (res_temp) << endl;
+				res = res << BIT;
+				add1 = add1 << BIT;
+				add2 = add2 << BIT;
+				res(BIT-1,0) = res_temp;//从最高位拿的就得从最低位读
+		}
+		return res;
 }

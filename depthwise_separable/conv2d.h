@@ -199,20 +199,21 @@ template <
 			unsigned IN_CH,
 			unsigned IN_BIT,
 
-			unsigned OUT_CH,
-			unsigned OUT_BIT,		// 量化�?活后的位�?
 
-			unsigned W_BIT,
-			unsigned M_BIT,
+			unsigned OUT_CH,
+			unsigned OUT_BIT,
 			unsigned INC_BIT,
 			unsigned BIAS_BIT,
-
+			unsigned W_BIT,
+			unsigned M_BIT,
+			
 			unsigned SIMD,
-			unsigned PE>
+			unsigned PE
+			>
 void conv1x1_bn_act(
 	stream<ap_uint<IN_BIT * IN_CH> >& in,
 	const ap_uint<SIMD*W_BIT> weights[PE][((IN_CH)/SIMD)*(OUT_CH/PE)],
-	const ap_uint<INC_BIT> inc[PE][OUT_CH/PE],
+	const ap_int<INC_BIT> inc[PE][OUT_CH/PE],
 	const ap_int<BIAS_BIT> bias[PE][OUT_CH/PE],
 	stream<ap_uint<OUT_BIT*OUT_CH> >& out,
 	const unsigned reps = 1)
@@ -541,11 +542,14 @@ void Inverted(
 			stream<ap_uint<IN_BIT * IN_CH> >& in,
 			const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9],//这里思考一下输入是多少,conv1*1 展开之后的应该是
 			const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE],//h*w*tk
-			const ap_uint<W_BIT> weights_conv1_2[PE][OUT_CH*IN_CH/PE],//权重理论上是1*1*IN_CH*OUT_CH //h*w*OUT_CH
-			const ap_int<INC_BIT> inc_conv3[1][IN_CH],
-			const ap_int <BIAS_BIT> bias_conv3[1][IN_CH],
-			const ap_int<INC_BIT> inc_conv1[PE][OUT_CH/PE], //d
-			const ap_int<BIAS_BIT> bias_conv1[PE][OUT_CH/PE],
+			//const ap_uint<W_BIT> weights_conv1_2[PE][OUT_CH*IN_CH/PE],//权重理论上是1*1*IN_CH*OUT_CH //h*w*OUT_CH
+			const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],//权重理论上是1*1*IN_CH*OUT_CH //h*w*OUT_CH
+			const ap_int<INC_BIT> inc_conv3[1][expand_ratio*IN_CH],
+			const ap_int <BIAS_BIT> bias_conv3[1][expand_ratio*IN_CH],
+			const ap_int<INC_BIT> inc_conv1_1[PE][expand_ratio*IN_CH/PE], //d
+			const ap_int<BIAS_BIT> bias_conv1_1[PE][expand_ratio*IN_CH/PE],
+			const ap_int<INC_BIT> inc_conv1_2[PE][OUT_CH/PE], //d
+			const ap_int<BIAS_BIT> bias_conv1_2[PE][OUT_CH/PE],
 			stream<ap_uint<OUT_CH*OUT_BIT>> &out, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
 			const unsigned reps = 1
 			)
@@ -553,11 +557,14 @@ void Inverted(
 			static_assert((S == 1 || S == 2),"S is not allowed!");
 			unsigned const hidden_dim = IN_CH * expand_ratio;
 
-			stream<ap_uint<hidden_dim*(OUT_BIT+W_BIT)>> out_temp;
+			stream<ap_uint<hidden_dim*(OUT_BIT)>> out_temp;
 			stream<ap_uint<OUT_CH*OUT_BIT>> out_shortcut;
 			if(IN_CH != OUT_CH){//这里不用相加
 				if(expand_ratio == 1 ){
-					conv_dp<IN_ROW,IN_COL,hidden_dim,IN_BIT,OUT_CH,OUT_BIT,W_BIT,M_BIT,INC_BIT,BIAS_BIT,PE,S>(in,weights_conv3,weights_conv1_2,inc_conv3,bias_conv3,inc_conv1,bias_conv1,out,1,true);
+					//这里的解决方法是什么，重新配置
+					stream<ap_uint<hidden_dim* IN_BIT>> in_copy_3;
+					StreamingDataWidthConverter_Batch<IN_BIT*IN_CH,hidden_dim*IN_BIT,IN_ROW*IN_COL>(in,in_copy_3,reps);
+					conv_dp<IN_ROW,IN_COL,hidden_dim,IN_BIT,OUT_CH,OUT_BIT,W_BIT,M_BIT,INC_BIT,BIAS_BIT,PE,S>(in_copy_3,weights_conv3,weights_conv1_3,inc_conv3,bias_conv3,inc_conv1_2,bias_conv1_2,out,1,true);
 					/*
 					    nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
 	                	nn.BatchNorm2d(hidden_dim),
@@ -570,10 +577,10 @@ void Inverted(
 
 
 			else {
-						conv1x1_bn_act<IN_ROW,IN_COL,IN_CH,IN_BIT,hidden_dim,OUT_BIT,INC_BIT,BIAS_BIT,W_BIT,M_BIT,1,PE>(in,weights_conv1_1,inc_conv1,bias_conv1,out_temp,1);//这里尼玛是个普通卷积
+						conv1x1_bn_act<IN_ROW,IN_COL,IN_CH,IN_BIT,hidden_dim,OUT_BIT,INC_BIT,BIAS_BIT,W_BIT,M_BIT,1,PE>(in,weights_conv1_1,inc_conv1_1,bias_conv1_1,out_temp,1);//这里尼玛是个普通卷积
 						//第一次的逐点卷积模块 普通1x1卷积 输入是H*W*IN_CH 输出应该是H*W*expand_ratio*IN_CH
 
-						conv_dp<IN_ROW,IN_COL,hidden_dim,OUT_BIT+W_BIT,OUT_CH,OUT_BIT,W_BIT,M_BIT,INC_BIT,BIAS_BIT,PE,S>(out_temp,weights_conv3,weights_conv1_2,inc_conv3,bias_conv3,inc_conv1,bias_conv1,out,1,true);
+						conv_dp<IN_ROW,IN_COL,hidden_dim,OUT_BIT,OUT_CH,OUT_BIT,W_BIT,M_BIT,INC_BIT,BIAS_BIT,PE,S>(out_temp,weights_conv3,weights_conv1_3,inc_conv3,bias_conv3,inc_conv1_2,bias_conv1_2,out,1,true);
 						//接着直接跟一个深度可分离卷积模块
 						/*
 					        # pw
@@ -592,71 +599,46 @@ void Inverted(
 
 					}
 			}
-			/*
+
 		   if( S == 1 && IN_CH == OUT_CH){//这下要相加咯
-			   if(expand_ratio == 1 ){
-			   					conv_dp<IN_ROW,IN_COL,hidden_dim,IN_BIT,OUT_CH,OUT_BIT,W_BIT,M_BIT,INC_BIT,BIAS_BIT,PE,S>(in,weights_conv3,weights_conv1_2,inc_conv3,bias_conv3,inc_conv1,bias_conv1,out_shortcut,1);
-			   	}
-			   	else {
-			   					conv1x1_dp_bn_linear<IN_ROW,IN_COL,IN_CH,OUT_BIT,OUT_CH,OUT_BIT+W_BIT,INC_BIT,BIAS_BIT,W_BIT,M_BIT+W_BIT,PE>(conv_out,weights_dp1,inc_1,bias_1,out_bc,1);
-			   						//第一次的逐点卷积模块 普通1x1卷积 输入是H*W*IN_CH 输出应该是H*W*expand_ratio*IN_CH
+			   // 定义FIFO
+			   stream<ap_uint<IN_BIT * IN_CH> > in_copy_1;
+			   stream<ap_uint<IN_BIT * IN_CH> > in_copy_2;
 
-			   					conv_dp<IN_ROW,IN_COL,hidden_dim,IN_BIT,OUT_CH,OUT_BIT,W_BIT,M_BIT,INC_BIT,BIAS_BIT,PE,S>(in,weights_conv3,weights_conv1_2,inc_conv3,bias_conv3,inc_conv1,bias_conv1,out_shortcut,1);
-			   						//接着直接跟一个深度可分离卷积模块
+			   // 在处理数据前复制数据流
+			   while(!in.empty()) {
+				   ap_uint<IN_BIT * IN_CH> data = in.read();
+			       in_copy_1.write(data);
+			       in_copy_2.write(data);  //
+			   }
+
+			   // 接下来你可以使用in_copy和out_temp进行后续处理
 
 
+			   					conv1x1_bn_act<IN_ROW,IN_COL,IN_CH,IN_BIT,hidden_dim,OUT_BIT,INC_BIT,BIAS_BIT,W_BIT,M_BIT,1,PE>(in_copy_1,weights_conv1_1,inc_conv1_1,bias_conv1_1,out_temp,1);//这里尼玛是个普通卷积
+								//第一次的逐点卷积模块 普通1x1卷积 输入是H*W*IN_CH 输出应该是H*W*expand_ratio*IN_CH
 
+								conv_dp<IN_ROW,IN_COL,hidden_dim,OUT_BIT,OUT_CH,OUT_BIT,W_BIT,M_BIT,INC_BIT,BIAS_BIT,PE,S>(out_temp,weights_conv3,weights_conv1_3,inc_conv3,bias_conv3,inc_conv1_2,bias_conv1_2,out_shortcut,1,true);
+								//接着直接跟一个深度可分离卷积模块
 
-			   	}
 			    //out == in + short_cut
 			   ap_uint<OUT_CH*OUT_BIT> temp_out;
 			   for(int i = 0 ;i < IN_ROW;i++){
 				   for(int j = 0; j<IN_COL;j++){
-					   for(int k = 0; k <OUT_CH;k++){
-						   	   temp_out = adder<OUT_BIT,OUT_CH>(in.read() + out_shortcut.read());//这里不是这么写的,得写个函数
+
+						   	   temp_out = adder<OUT_BIT,OUT_CH>(in_copy_2.read(),out_shortcut.read());//这里不是这么写的,得写个函数
+						   	   //cout << "problem" <<endl;
 						   	   out.write(temp_out);
-					   }
+
 				   }
 			   }
 		   }
-			*/
 
 		}
 
 
 
-template<
-			unsigned BIT,
 
-			unsigned CH
-
-		>
-ap_uint<CH*BIT> adder(
-			ap_uint<CH*BIT> add1,
-			ap_uint<CH*BIT> add2
-		)
-{
-		ap_uint<CH*BIT> res;
-		ap_uint<BIT> add1_temp;
-		ap_uint<BIT> add2_temp;
-		ap_uint<BIT> res_temp;
-		//cout << "add1 = " <<bitset<CH*BIT>(add1) <<endl;
-		//cout << "add2 = " <<bitset<CH*BIT>(add2) <<endl;
-
-		for(int i = 0 ;i<CH;i++){
-				add1_temp = add1(CH*BIT-1,(CH-1)*BIT);
-				//cout << "add_1 temp" << bitset<BIT> (add1_temp) << endl;
-				add2_temp = add2(CH*BIT-1,CH*BIT-BIT);
-
-				res_temp  = add1_temp + add2_temp;
-				//cout << "res temp" << bitset<BIT> (res_temp) << endl;
-				res = res << BIT;
-				add1 = add1 << BIT;
-				add2 = add2 << BIT;
-				res(BIT-1,0) = res_temp;//从最高位拿的就得从最低位读
-		}
-		return res;
-}
 
 
 

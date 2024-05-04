@@ -15,8 +15,8 @@
 #define W_BIT       4
 #define INC_BIT     4
 #define BIAS_BIT    4
-#define M_BIT       8
-#define OUT_BIT     8
+#define M_BIT       4
+#define OUT_BIT     4
 
 #define OUT_CH      9
 #define PE          1
@@ -53,27 +53,44 @@ int main(int argc, char const *argv[])
             cout << endl;
         }
 	*/
-    unsigned const expand_ratio = 1;
+    unsigned const expand_ratio = 2;
     ap_uint<SIMD*W_BIT> weights[PE][((IN_CH*9)/SIMD)*(OUT_CH/PE)];
+
     ap_uint<W_BIT> weights_dp3[IN_CH][9]; //define weights_DP
-    ap_uint<W_BIT> weights_dp1[PE][OUT_CH*IN_CH/PE];
-    ap_uint<W_BIT> weights_dp1_1[PE][expand_ratio*IN_CH*IN_CH/PE];//h*w*tk
-    ap_int<INC_BIT> inc_3[1][IN_CH]; //d
-    ap_int<BIAS_BIT> bias_3[1][IN_CH];
-    ap_int<INC_BIT> inc_1[PE][OUT_CH/PE]; //d
-    ap_int<BIAS_BIT> bias_1[PE][OUT_CH/PE];
-    for(int k = 0; k < IN_CH; k++)
-    {
-    	inc_3[0][k]= 1;
+
+    ap_uint<W_BIT> weights_dp1_1[PE][expand_ratio*IN_CH*IN_CH/PE];//
+    ap_uint<W_BIT> weights_dp1_2[PE][OUT_CH*IN_CH/PE];//h*w*tk
+    ap_uint<W_BIT> weights_dp1_3[PE][expand_ratio*OUT_CH*IN_CH/PE];
+
+    ap_int<INC_BIT> inc_conv3[1][expand_ratio*IN_CH]; //conv3x3 incs
+    ap_int<BIAS_BIT> bias_3[1][expand_ratio*IN_CH];//conv3x3 bias
+    ap_int<INC_BIT> inc_pw_2[PE][OUT_CH/PE]; //conv1x1 dp inc
+    ap_int<BIAS_BIT> bias_pw_2[PE][OUT_CH/PE];//conv1x1 dp inc
+    ap_int<INC_BIT> inc_pw_1[PE][expand_ratio*IN_CH/PE]; //conv1x1 dp inc
+    ap_int<BIAS_BIT> bias_pw_1[PE][expand_ratio*IN_CH/PE];
+    ap_int<INC_BIT> inc_pw_3[PE][expand_ratio*IN_CH*OUT_CH/PE]; //d
+    ap_int<BIAS_BIT> bias_pw_3[PE][expand_ratio*IN_CH*OUT_CH/PE];
+    for(int k = 0; k < expand_ratio*IN_CH; k++){
+    	inc_conv3[0][k]= 1;
     	bias_3[0][k] = 1;
     }
-    for(int k = 0; k <PE; k++)
-        {
-    		for(int i = 0; i < OUT_CH; i++)
-    		{
-    			inc_1[k][i]= 1;
-    			bias_1[k][i] = 1;
+    for(int k = 0; k <PE; k++){
+    		for(int i = 0; i < OUT_CH/PE; i++){
+    			inc_pw_2[k][i]= 1;
+    			bias_pw_2[k][i] = 1;
     		}
+    }
+    for(int k = 0; k <PE; k++){
+    		for(int i = 0; i < expand_ratio*IN_CH/PE; i++){
+        			inc_pw_1[k][i]= 1;
+        			bias_pw_1[k][i] = 1;
+        	}
+    }
+    for(int k = 0; k <PE; k++){
+        		for(int i = 0; i < expand_ratio*IN_CH*OUT_CH/PE; i++){
+            			inc_pw_3[k][i]= 1;
+            			bias_pw_3[k][i] = 1;
+            	}
         }
     //weights_DP for 3x3
     for(int i = 0;i < IN_CH;i ++){
@@ -88,21 +105,29 @@ int main(int argc, char const *argv[])
     cout<< endl;
     //weights_DP for 1x1
     for(int i = 0;i < PE;i ++){
-            for (int k = 0; k < IN_CH*OUT_CH/PE; k++)
+            for (int k = 0; k < expand_ratio*IN_CH*IN_CH; k++)
         		{
-        			weights_dp1[i][k] = 1;
+        			weights_dp1_1[i][k] = 1;
         		}
             }
      cout<< endl;
+
     //weights for pw
     //测试正常卷积
     for(int i = 0;i < PE;i ++){
          for (int k = 0; k < IN_CH*OUT_CH/PE; k++)
              {
-             			weights_dp1[i][k] = 1;
+             			weights_dp1_2[i][k] = 1;
              	}
     }
     cout<< endl;
+    for(int i = 0;i < PE;i ++){
+             for (int k = 0; k < expand_ratio*IN_CH*OUT_CH/PE; k++)
+                 {
+                 			weights_dp1_3[i][k] = 1;
+                 	}
+        }
+        cout<< endl;
     for(int i = 0;i < PE;i ++){
         for (int k = 0; k < ((IN_CH*9)/SIMD)*(OUT_CH/PE); k++)
     		{
@@ -120,15 +145,21 @@ int main(int argc, char const *argv[])
     		(
     			in,
 				weights_dp3,
-    			weights_dp1,//h*w*tk
-    			weights_dp1,//权重理论上是1*1*IN_CH*OUT_CH //h*w*OUT_CH
-    			inc_3,
+    			weights_dp1_1,//给pw使用的
+    			//weights_dp1_2,//单独给expand_ratio == 1 dp使用的
+				weights_dp1_3,//单独给expand_ratio ！=1 dp使用的
+    			inc_conv3,
     			bias_3,
-    			inc_1, //d
-    			bias_1,
+    			inc_pw_1, //d
+    			bias_pw_1,
+				inc_pw_2,
+				bias_pw_2,
+				//inc_pw_3,
+				//bias_pw_3,
     			conv_out, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
     			1
-    			);
+				);
+
     for(int i = 0; i < IN_ROW/S; i ++) {
           	for(int j = 0; j < IN_COL/S; j++)
           	{
@@ -170,13 +201,13 @@ for(int k = 0; k < IN_CH;k++){
 /*
 stream<ap_uint<OUT_BIT>> out[IN_CH];
 
-conv3x3_dp_bn_act<IN_ROW,IN_COL,IN_CH,IN_BIT,OUT_BIT,INC_BIT,BIAS_BIT, W_BIT, M_BIT,S> (in,weights_dp3,inc_3,bias_3,out,1);
+conv3x3_dp_bn_act<IN_ROW,IN_COL,IN_CH,IN_BIT,OUT_BIT,INC_BIT,BIAS_BIT, W_BIT, M_BIT,S> (in,weights_dp3,inc_conv3,bias_3,out,1);
 
-conv1x1_dp_bn_act<IN_ROW,IN_COL,IN_CH,OUT_BIT,OUT_CH,OUT_BIT+W_BIT,INC_BIT,BIAS_BIT,W_BIT,M_BIT+W_BIT,PE>(out,weights_dp1,inc_1,bias_1,conv_out,1);
+conv1x1_dp_bn_act<IN_ROW,IN_COL,IN_CH,OUT_BIT,OUT_CH,OUT_BIT+W_BIT,INC_BIT,BIAS_BIT,W_BIT,M_BIT+W_BIT,PE>(out,weights_dp1,inc_pw_1,bias_pw_1,conv_out,1);
 
 //测试深度可分离模块
     conv_dp<IN_ROW,IN_COL,IN_CH,IN_BIT,OUT_CH,OUT_BIT,W_BIT,M_BIT,INC_BIT,BIAS_BIT,PE,S>
-      (in,weights_dp3,weights_dp1,inc_3,bias_3,inc_1,bias_1,conv_out,1,true);//define weights_DP
+      (in,weights_dp3,weights_dp1,inc_conv3,bias_3,inc_pw_1,bias_pw_1,conv_out,1,true);//define weights_DP
 
       cout << "size = "<<conv_out.size() << endl;
 
