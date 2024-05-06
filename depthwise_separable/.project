@@ -42,9 +42,19 @@
 			<location>C:/Users/31392/Desktop/bachelor_thesis/My_code/conv_1/depthwise_separable/solution1/.tcls</location>
 		</link>
 		<link>
+			<name>source/MobileNetV2.cpp</name>
+			<type>1</type>
+			<location>C:/Users/31392/Desktop/bachelor_thesis/My_code/conv_1/depthwise_separable/MobileNetV2.cpp</location>
+		</link>
+		<link>
 			<name>source/bn_qrelu2d.h</name>
 			<type>1</type>
 			<location>C:/Users/31392/Desktop/bachelor_thesis/My_code/conv_1/depthwise_separable/bn_qrelu2d.h</location>
+		</link>
+		<link>
+			<name>source/config.h</name>
+			<type>1</type>
+			<location>C:/Users/31392/Desktop/bachelor_thesis/My_code/conv_1/depthwise_separable/config.h</location>
 		</link>
 		<link>
 			<name>source/conv2d.h</name>
@@ -62,6 +72,16 @@
 			<location>C:/Users/31392/Desktop/bachelor_thesis/My_code/conv_1/depthwise_separable/matrix_vector_unit.h</location>
 		</link>
 		<link>
+			<name>source/param.h</name>
+			<type>1</type>
+			<location>C:/Users/31392/Desktop/bachelor_thesis/My_code/conv_1/depthwise_separable/param.h</location>
+		</link>
+		<link>
+			<name>source/pool2d.h</name>
+			<type>1</type>
+			<location>C:/Users/31392/Desktop/bachelor_thesis/My_code/conv_1/depthwise_separable/pool2d.h</location>
+		</link>
+		<link>
 			<name>source/sliding_window_unit.h</name>
 			<type>1</type>
 			<location>C:/Users/31392/Desktop/bachelor_thesis/My_code/conv_1/depthwise_separable/sliding_window_unit.h</location>
@@ -72,9 +92,9 @@
 			<location>C:/Users/31392/Desktop/bachelor_thesis/My_code/conv_1/depthwise_separable/stream_tools.h</location>
 		</link>
 		<link>
-			<name>testbench/conv_test.cpp</name>
+			<name>testbench/pooling_test.cpp</name>
 			<type>1</type>
-			<location>C:/Users/31392/Desktop/bachelor_thesis/My_code/conv_1/depthwise_separable/conv_test.cpp</location>
+			<location>C:/Users/31392/Desktop/bachelor_thesis/My_code/conv_1/depthwise_separable/pooling_test.cpp</location>
 		</link>
 		<link>
 			<name>solution1/constraints/.xml.directive</name>

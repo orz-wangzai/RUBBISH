@@ -1,5 +1,5 @@
 # ==============================================================
-# File generated on Sat May 04 10:51:11 +0200 2024
+# File generated on Tue May 07 01:23:35 +0200 2024
 # Vivado(TM) HLS - High-Level Synthesis from C, C++ and SystemC v2018.3 (64-bit)
 # SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
 # IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
@@ -21,7 +21,7 @@ __SIM_DDS__ = 1
 
 ObjDir = obj
 
-HLS_SOURCES = ../../../conv_test.cpp
+HLS_SOURCES = ../../../pooling_test.cpp
 
 TARGET := csim.exe
 
@@ -73,8 +73,8 @@ all: $(TARGET)
 
 
 
-$(ObjDir)/conv_test.o: ../../../conv_test.cpp $(ObjDir)/.dir
-	$(Echo) "   Compiling ../../../conv_test.cpp in $(BuildMode) mode" $(AVE_DIR_DLOG)
+$(ObjDir)/pooling_test.o: ../../../pooling_test.cpp $(ObjDir)/.dir
+	$(Echo) "   Compiling ../../../pooling_test.cpp in $(BuildMode) mode" $(AVE_DIR_DLOG)
 	$(Verb)  $(CC) ${CCFLAG} -c -MMD  $(IFLAG) $(DFLAG) $< -o $@ ; \
 
--include $(ObjDir)/conv_test.d
+-include $(ObjDir)/pooling_test.d

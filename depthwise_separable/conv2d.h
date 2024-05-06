@@ -543,7 +543,7 @@ void Inverted(
 			const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9],//这里思考一下输入是多少,conv1*1 展开之后的应该是
 			const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE],//h*w*tk
 			//const ap_uint<W_BIT> weights_conv1_2[PE][OUT_CH*IN_CH/PE],//权重理论上是1*1*IN_CH*OUT_CH //h*w*OUT_CH
-			const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],//权重理论上是1*1*IN_CH*OUT_CH //h*w*OUT_CH
+			const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],//权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
 			const ap_int<INC_BIT> inc_conv3[1][expand_ratio*IN_CH],
 			const ap_int <BIAS_BIT> bias_conv3[1][expand_ratio*IN_CH],
 			const ap_int<INC_BIT> inc_conv1_1[PE][expand_ratio*IN_CH/PE], //d
@@ -611,14 +611,10 @@ void Inverted(
 			       in_copy_1.write(data);
 			       in_copy_2.write(data);  //
 			   }
-
-			   // 接下来你可以使用in_copy和out_temp进行后续处理
-
-
-			   					conv1x1_bn_act<IN_ROW,IN_COL,IN_CH,IN_BIT,hidden_dim,OUT_BIT,INC_BIT,BIAS_BIT,W_BIT,M_BIT,1,PE>(in_copy_1,weights_conv1_1,inc_conv1_1,bias_conv1_1,out_temp,1);//这里尼玛是个普通卷积
+			   	conv1x1_bn_act<IN_ROW,IN_COL,IN_CH,IN_BIT,hidden_dim,OUT_BIT,INC_BIT,BIAS_BIT,W_BIT,M_BIT,1,PE>(in_copy_1,weights_conv1_1,inc_conv1_1,bias_conv1_1,out_temp,1);//这里尼玛是个普通卷积
 								//第一次的逐点卷积模块 普通1x1卷积 输入是H*W*IN_CH 输出应该是H*W*expand_ratio*IN_CH
 
-								conv_dp<IN_ROW,IN_COL,hidden_dim,OUT_BIT,OUT_CH,OUT_BIT,W_BIT,M_BIT,INC_BIT,BIAS_BIT,PE,S>(out_temp,weights_conv3,weights_conv1_3,inc_conv3,bias_conv3,inc_conv1_2,bias_conv1_2,out_shortcut,1,true);
+				conv_dp<IN_ROW,IN_COL,hidden_dim,OUT_BIT,OUT_CH,OUT_BIT,W_BIT,M_BIT,INC_BIT,BIAS_BIT,PE,S>(out_temp,weights_conv3,weights_conv1_3,inc_conv3,bias_conv3,inc_conv1_2,bias_conv1_2,out_shortcut,1,true);
 								//接着直接跟一个深度可分离卷积模块
 
 			    //out == in + short_cut
@@ -626,7 +622,7 @@ void Inverted(
 			   for(int i = 0 ;i < IN_ROW;i++){
 				   for(int j = 0; j<IN_COL;j++){
 
-						   	   temp_out = adder<OUT_BIT,OUT_CH>(in_copy_2.read(),out_shortcut.read());//这里不是这么写的,得写个函数
+						   	   temp_out = adder<OUT_BIT,OUT_CH>(in_copy_2.read(),out_shortcut.read());//adder 函数用来相加
 						   	   //cout << "problem" <<endl;
 						   	   out.write(temp_out);
 
