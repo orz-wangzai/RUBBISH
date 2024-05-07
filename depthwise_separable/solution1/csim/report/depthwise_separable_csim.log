@@ -1,11 +1,12 @@
 INFO: [SIM 2] *************** CSIM start ***************
 INFO: [SIM 4] CSIM will launch GCC as the compiler.
    Compiling ../../../pooling_test.cpp in debug mode
+   Compiling ../../../MobileNetV2.cpp in debug mode
    Generating csim.exe
- the inPerOut is 1280
+ the inPerOut is 3
  the size of the matrix  is 1
 ????2
-????2560
+????6
 21
 INFO: [SIM 1] CSim done with 0 errors.
 INFO: [SIM 3] *************** CSIM finish ***************

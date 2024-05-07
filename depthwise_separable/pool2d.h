@@ -72,7 +72,7 @@ void avg_pool2d(
 {
 #pragma HLS DATAFLOW
     // TODO IN_ROW % S != 0
-    // 暂时只处理特殊情�?
+    // 暂时只处理特殊情况
     const unsigned OUT_ROW = 1;
     const unsigned OUT_COL = 1;
     const unsigned S = 1;

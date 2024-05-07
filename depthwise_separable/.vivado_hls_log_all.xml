@@ -9,6 +9,9 @@
       <mgLog/>
       <packageLog/>
       <csimLog>
+        <logs message="ERROR: [SIM 211-100] 'csim_design' failed: compilation error(s)." projectName="depthwise_separable" solutionName="solution1" date="2024-05-08T00:10:26.702+0200"/>
+        <logs message="ERROR: [SIM 211-100] 'csim_design' failed: compilation error(s)." projectName="depthwise_separable" solutionName="solution1" date="2024-05-08T00:09:42.181+0200"/>
+        <logs message="ERROR: [SIM 211-100] 'csim_design' failed: compilation error(s)." projectName="depthwise_separable" solutionName="solution1" date="2024-05-08T00:05:35.584+0200"/>
         <logs message="ERROR: [SIM 211-100] 'csim_design' failed: nonzero return value." projectName="depthwise_separable" solutionName="solution1" date="2024-05-07T01:18:54.641+0200"/>
         <logs message="@E Simulation failed: Function 'main' returns nonzero value '3'." projectName="depthwise_separable" solutionName="solution1" date="2024-05-07T01:18:54.626+0200"/>
         <logs message="ERROR: ap_uint&lt;2560>: Bitwidth exceeds the default max value 1024. Please use macro AP_INT_MAX_W to set a larger max value." projectName="depthwise_separable" solutionName="solution1" date="2024-05-07T01:18:54.611+0200"/>

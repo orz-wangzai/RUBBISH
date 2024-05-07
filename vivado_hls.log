@@ -1,5 +1,5 @@
 INFO: [HLS 200-10] Running 'E:/Vivado/xilinx/Vivado/2018.3/bin/unwrapped/win64.o/vivado_hls.exe'
-INFO: [HLS 200-10] For user '31392' on host 'wangzai' (Windows NT_amd64 version 6.2) on Tue May 07 01:23:35 +0200 2024
+INFO: [HLS 200-10] For user '31392' on host 'wangzai' (Windows NT_amd64 version 6.2) on Wed May 08 00:12:58 +0200 2024
 INFO: [HLS 200-10] In directory 'C:/Users/31392/Desktop/bachelor_thesis/My_code/conv_1'
 INFO: [HLS 200-10] Opening project 'C:/Users/31392/Desktop/bachelor_thesis/My_code/conv_1/depthwise_separable'.
 INFO: [HLS 200-10] Opening solution 'C:/Users/31392/Desktop/bachelor_thesis/My_code/conv_1/depthwise_separable/solution1'.
@@ -8,6 +8,7 @@ INFO: [HLS 200-10] Setting target device to 'xczu2eg-sfvc784-2lv-e'
 INFO: [SIM 211-2] *************** CSIM start ***************
 INFO: [SIM 211-4] CSIM will launch GCC as the compiler.
    Compiling ../../../pooling_test.cpp in debug mode
+   Compiling ../../../MobileNetV2.cpp in debug mode
    Generating csim.exe
 In file included from E:/Vivado/xilinx/Vivado/2018.3/include/floating_point_v7_0_bitacc_cmodel.h:143:0,
                  from E:/Vivado/xilinx/Vivado/2018.3/include/hls_fpo.h:186,
@@ -28,10 +29,29 @@ In file included from E:/Vivado/xilinx/Vivado/2018.3/include/hls_fpo.h:186:0,
 E:/Vivado/xilinx/Vivado/2018.3/include/floating_point_v7_0_bitacc_cmodel.h:135:0: note: this is the location of the previous definition
  #define __GMP_LIBGMP_DLL 1
  
- the inPerOut is 1280
+In file included from E:/Vivado/xilinx/Vivado/2018.3/include/floating_point_v7_0_bitacc_cmodel.h:143:0,
+                 from E:/Vivado/xilinx/Vivado/2018.3/include/hls_fpo.h:186,
+                 from E:/Vivado/xilinx/Vivado/2018.3/include/hls_half.h:44,
+                 from E:/Vivado/xilinx/Vivado/2018.3/include/etc/ap_private.h:90,
+                 from E:/Vivado/xilinx/Vivado/2018.3/include/ap_common.h:641,
+                 from E:/Vivado/xilinx/Vivado/2018.3/include/ap_int.h:54,
+                 from ../../../MobileNetV2.cpp:12:
+E:/Vivado/xilinx/Vivado/2018.3/include/gmp.h:62:0: warning: "__GMP_LIBGMP_DLL" redefined
+ #define __GMP_LIBGMP_DLL  0
+ 
+In file included from E:/Vivado/xilinx/Vivado/2018.3/include/hls_fpo.h:186:0,
+                 from E:/Vivado/xilinx/Vivado/2018.3/include/hls_half.h:44,
+                 from E:/Vivado/xilinx/Vivado/2018.3/include/etc/ap_private.h:90,
+                 from E:/Vivado/xilinx/Vivado/2018.3/include/ap_common.h:641,
+                 from E:/Vivado/xilinx/Vivado/2018.3/include/ap_int.h:54,
+                 from ../../../MobileNetV2.cpp:12:
+E:/Vivado/xilinx/Vivado/2018.3/include/floating_point_v7_0_bitacc_cmodel.h:135:0: note: this is the location of the previous definition
+ #define __GMP_LIBGMP_DLL 1
+ 
+ the inPerOut is 3
  the size of the matrix  is 1
 ????2
-????2560
+????6
 21
 INFO: [SIM 211-1] CSim done with 0 errors.
 INFO: [SIM 211-3] *************** CSIM finish ***************

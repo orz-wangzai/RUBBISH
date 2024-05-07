@@ -15,7 +15,7 @@
 #define K      7
 #define IN_ROW 7
 #define IN_COL 7
-#define IN_CH  1280
+#define IN_CH  3
 #define IN_BIT 2
 
 int main(int argc, char const *argv[]){

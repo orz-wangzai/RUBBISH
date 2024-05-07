@@ -67,6 +67,7 @@ void ExtractPixels(stream<my_ap_axis> &in, stream<ap_uint<OutStreamW>> &out,
         out.write(temp.data(OutStreamW - 1, 0));
     }
 }
+
 template <unsigned InStreamW, unsigned OutStreamW, unsigned NumLines>
 void AppendZeros(stream<ap_uint<InStreamW>> &in,
                  stream<ap_uint<OutStreamW>> &out, const unsigned reps = 1) {
@@ -177,7 +178,7 @@ void adjust_width(stream<ap_uint<IN_BIT>> &in, stream<ap_uint<OUT_BIT>> &out,
     }
 }
 
-//这个函数还挺重要的，得看一下
+//这个函数还挺重要的，得看一下 如果InWidth > Outwidth NumInwords 就是In的size 反之亦然
 template <unsigned int InWidth,   // width of input stream
           unsigned int OutWidth,  // width of output stream
           unsigned int NumInWords // number of input words to process

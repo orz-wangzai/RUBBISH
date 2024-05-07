@@ -633,7 +633,90 @@ void Inverted(
 		}
 
 
+// conv3*3 卷积 带归一化层和激活函数
+template <
+			unsigned IN_ROW,
+			unsigned IN_COL,
+			unsigned IN_CH,
+			unsigned IN_BIT,
 
+			unsigned OUT_CH,
+			unsigned OUT_BIT,
+			unsigned W_BIT,
+			unsigned M_BIT,
+			unsigned INC_BIT,
+			unsigned BIAS_BIT,
+
+			unsigned SIMD,
+			unsigned PE,
+			unsigned S>
+void conv3x3_bn(
+    stream<ap_uint<IN_BIT * IN_CH> >& in,
+	const ap_uint<SIMD*W_BIT> weights[PE][((IN_CH*9)/SIMD)*(OUT_CH/PE)],
+	const ap_int<INC_BIT> inc[PE][OUT_CH/PE],
+	const ap_int<BIAS_BIT> bias[PE][OUT_CH/PE],
+	stream<ap_uint<OUT_BIT*OUT_CH> >& out,
+	const unsigned reps = 1
+	)
+{
+#pragma HLS DATAFLOW
+
+	const unsigned INTER_ROW = IN_ROW + 2;
+	const unsigned INTER_COL = IN_COL + 2;
+	// 暂时认为输入 输出维度不变
+
+	const unsigned OUT_ROW = IN_ROW;
+	const unsigned OUT_COL = IN_COL;
+
+	//stream<ap_uint<IN_CH*IN_BIT> > in_adj("in_adj");
+	// StreamingDataWidthConverter_Batch<IN_STREAM_BIT, IN_CH*IN_BIT>(in, in_adj, reps);
+	// padding
+	stream<ap_uint<IN_CH*IN_BIT> > padding_out("samepad_out");
+	padding<IN_ROW, IN_COL, IN_CH, IN_BIT, 1>(in, padding_out, reps);
+	cout << "the size after padding " << padding_out.size() << endl;
+	// 滑动窗口 这下懂了
+	stream<ap_uint<IN_CH*IN_BIT> > swu_out("swu_out");
+	SWU<3, S, INTER_ROW, INTER_COL, IN_CH, IN_BIT> (padding_out, swu_out, reps);
+	cout <<"the size of the window " <<  swu_out.size() << endl;
+	// 位宽调整
+	stream<ap_uint<SIMD*IN_BIT> > adj_out("adj_out");
+	if(S == 1){
+		StreamingDataWidthConverter_Batch<IN_CH*IN_BIT, SIMD*IN_BIT, 9*OUT_ROW*OUT_COL>(swu_out, adj_out, reps);
+	}
+	if(S == 2){
+		StreamingDataWidthConverter_Batch<IN_CH*IN_BIT, SIMD*IN_BIT, 9*OUT_ROW/2*OUT_COL/2>(swu_out, adj_out, reps);
+	}
+	cout<<"the size of the adjustment " << adj_out.size() <<  endl; //swu_out*3
+	for(int i = 0; i < 9; i++)
+	{
+		for(int j = 0 ; j < 9; j++)
+		{
+			cout << swu_out.read() << " ";
+		}
+		cout << endl;
+	}
+
+	// 矩阵向量计算
+	stream<ap_uint<PE*OUT_BIT> > mvau_out("mvau_out");
+	if( S == 1 )
+	{
+		matrix_vector_act_unit_no<IN_CH*3*3, OUT_CH, IN_BIT, OUT_BIT,W_BIT, M_BIT,INC_BIT,BIAS_BIT, SIMD, PE, OUT_ROW*OUT_COL> (adj_out, weights,inc,bias,mvau_out,reps);
+	//IN_ROW*IN_COL*OUT_CH if (s == 1) //这里出来的位宽不是OUT_CH * OUT_BIT 就是OUT_BIT
+	}
+	if(S == 2)
+	{
+		matrix_vector_act_unit_no<IN_CH*3*3, OUT_CH, IN_BIT, OUT_BIT,W_BIT, M_BIT,INC_BIT,BIAS_BIT, SIMD, PE, OUT_ROW/2*OUT_COL/2> (adj_out, weights,inc,bias,mvau_out,reps);
+	}
+	cout << " the size of the mvau " << mvau_out.size() << endl;
+	if(S == 1){
+		StreamingDataWidthConverter_Batch<PE*OUT_BIT, OUT_CH*OUT_BIT, OUT_ROW * OUT_COL>(mvau_out, out, reps);
+	}
+	if( S == 2)
+	{
+		StreamingDataWidthConverter_Batch<PE*OUT_BIT, OUT_CH*OUT_BIT, OUT_ROW /2* OUT_COL/2>(mvau_out, out, reps);
+	}
+	cout << " the size of the final out " << out.size() << endl;
+}
 
 
 
@@ -777,90 +860,7 @@ void conv3x3(
 	}
 	cout << " the size of the final out " << out.size() << endl;
 }
-
- conv3*3 卷积 带归一化层和激活函数
-template <
-			unsigned IN_ROW,
-			unsigned IN_COL,
-			unsigned IN_CH,
-			unsigned IN_BIT,
-
-			unsigned OUT_CH,
-			unsigned OUT_BIT,
-			unsigned W_BIT,
-			unsigned M_BIT,
-			unsigned INC_BIT,
-			unsigned BIAS_BIT,
-
-			unsigned SIMD,
-			unsigned PE,
-			unsigned S>
-void conv3x3_bn(
-    stream<ap_uint<IN_BIT * IN_CH> >& in,
-	const ap_uint<SIMD*W_BIT> weights[PE][((IN_CH*9)/SIMD)*(OUT_CH/PE)],
-	const ap_int<INC_BIT> inc[PE][OUT_CH/PE],
-	const ap_int<BIAS_BIT> bias[PE][OUT_CH/PE],
-	stream<ap_uint<OUT_BIT*OUT_CH> >& out,
-	const unsigned reps = 1
-	)
-{
-#pragma HLS DATAFLOW
-
-	const unsigned INTER_ROW = IN_ROW + 2;
-	const unsigned INTER_COL = IN_COL + 2;
-	// 暂时认为输入 输出维度不变
-
-	const unsigned OUT_ROW = IN_ROW;
-	const unsigned OUT_COL = IN_COL;
-
-	//stream<ap_uint<IN_CH*IN_BIT> > in_adj("in_adj");
-	// StreamingDataWidthConverter_Batch<IN_STREAM_BIT, IN_CH*IN_BIT>(in, in_adj, reps);
-	// padding
-	stream<ap_uint<IN_CH*IN_BIT> > padding_out("samepad_out");
-	padding<IN_ROW, IN_COL, IN_CH, IN_BIT, 1>(in, padding_out, reps);
-	cout << "the size after padding " << padding_out.size() << endl;
-	// 滑动窗口 这下懂了
-	stream<ap_uint<IN_CH*IN_BIT> > swu_out("swu_out");
-	SWU<3, S, INTER_ROW, INTER_COL, IN_CH, IN_BIT> (padding_out, swu_out, reps);
-	cout <<"the size of the window " <<  swu_out.size() << endl;
-	// 位宽调整
-	stream<ap_uint<SIMD*IN_BIT> > adj_out("adj_out");
-	if(S == 1){
-		StreamingDataWidthConverter_Batch<IN_CH*IN_BIT, SIMD*IN_BIT, 9*OUT_ROW*OUT_COL>(swu_out, adj_out, reps);
-	}
-	if(S == 2){
-		StreamingDataWidthConverter_Batch<IN_CH*IN_BIT, SIMD*IN_BIT, 9*OUT_ROW/2*OUT_COL/2>(swu_out, adj_out, reps);
-	}
-	cout<<"the size of the adjustment " << adj_out.size() <<  endl; //swu_out*3
-	for(int i = 0; i < 9; i++)
-	{
-		for(int j = 0 ; j < 9; j++)
-		{
-			cout << swu_out.read() << " ";
-		}
-		cout << endl;
-	}
-
-	// 矩阵向量计算
-	stream<ap_uint<PE*OUT_BIT> > mvau_out("mvau_out");
-	if( S == 1 )
-	{
-		matrix_vector_act_unit_no<IN_CH*3*3, OUT_CH, IN_BIT, OUT_BIT,W_BIT, M_BIT,INC_BIT,BIAS_BIT, SIMD, PE, OUT_ROW*OUT_COL> (adj_out, weights,inc,bias,mvau_out,reps);
-	//IN_ROW*IN_COL*OUT_CH if (s == 1) //这里出来的位宽不是OUT_CH * OUT_BIT 就是OUT_BIT
-	}
-	if(S == 2)
-	{
-		matrix_vector_act_unit_no<IN_CH*3*3, OUT_CH, IN_BIT, OUT_BIT,W_BIT, M_BIT,INC_BIT,BIAS_BIT, SIMD, PE, OUT_ROW/2*OUT_COL/2> (adj_out, weights,inc,bias,mvau_out,reps);
-	}
-	cout << " the size of the mvau " << mvau_out.size() << endl;
-	if(S == 1){
-		StreamingDataWidthConverter_Batch<PE*OUT_BIT, OUT_CH*OUT_BIT, OUT_ROW * OUT_COL>(mvau_out, out, reps);
-	}
-	if( S == 2)
-	{
-		StreamingDataWidthConverter_Batch<PE*OUT_BIT, OUT_CH*OUT_BIT, OUT_ROW /2* OUT_COL/2>(mvau_out, out, reps);
-	}
-	cout << " the size of the final out " << out.size() << endl;
-}
 */
+
+
 

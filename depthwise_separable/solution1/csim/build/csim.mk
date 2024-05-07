@@ -1,5 +1,5 @@
 # ==============================================================
-# File generated on Tue May 07 01:23:35 +0200 2024
+# File generated on Wed May 08 00:12:58 +0200 2024
 # Vivado(TM) HLS - High-Level Synthesis from C, C++ and SystemC v2018.3 (64-bit)
 # SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
 # IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
@@ -21,7 +21,7 @@ __SIM_DDS__ = 1
 
 ObjDir = obj
 
-HLS_SOURCES = ../../../pooling_test.cpp
+HLS_SOURCES = ../../../pooling_test.cpp ../../../MobileNetV2.cpp
 
 TARGET := csim.exe
 
@@ -78,3 +78,9 @@ $(ObjDir)/pooling_test.o: ../../../pooling_test.cpp $(ObjDir)/.dir
 	$(Verb)  $(CC) ${CCFLAG} -c -MMD  $(IFLAG) $(DFLAG) $< -o $@ ; \
 
 -include $(ObjDir)/pooling_test.d
+
+$(ObjDir)/MobileNetV2.o: ../../../MobileNetV2.cpp $(ObjDir)/.dir
+	$(Echo) "   Compiling ../../../MobileNetV2.cpp in $(BuildMode) mode" $(AVE_DIR_DLOG)
+	$(Verb)  $(CC) ${CCFLAG} -c -MMD  $(IFLAG) $(DFLAG) $< -o $@ ; \
+
+-include $(ObjDir)/MobileNetV2.d
