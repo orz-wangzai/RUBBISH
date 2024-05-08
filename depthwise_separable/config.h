@@ -1,4 +1,4 @@
-// conv_0
+// 
 
 #define CONV_0_IFM_CH 3 
 #define CONV_0_IFM_ROW 224
@@ -13,168 +13,149 @@
 #define CONV_0_SIMD     3
 #define CONV_0_S        2
 
+//bottle neck 0 t c n s 1 16 1 1
+#define Bottle_neck_0_IFM_ROW 112
+#define Bottek_neck_0_IFM_COL 112
+#define Bottle_neck_0_IFM_IN_CH 32
+#define Bottle_neck_0_IN_BIT    4
 
-// conv_1
-#define CONV_1_K 3 
-#define CONV_1_S 1 
-#define CONV_1_P 1 
-#define CONV_1_IFM_CH 16 
-#define CONV_1_IFM_ROW 80 
-#define CONV_1_IFM_COL 160 
-#define CONV_1_OFM_CH 32 
-#define CONV_1_OFM_ROW 80 
-#define CONV_1_OFM_COL 160 
-#define CONV_1_SIMD 16 
-#define CONV_1_PE 8 
-#define CONV_1_IN_BIT 4 
-#define CONV_1_OUT_BIT 4 
-#define CONV_1_W_BIT 4 
-#define CONV_1_INC_BIT 13 
-#define CONV_1_BIAS_BIT 21 
-#define CONV_1_W_TILES 36 
-#define CONV_1_A_TILES 4 
-#define CONV_1_L_SHIFT 8 
+#define Bottle_neck_0_OFM_CH    16
+#define Bottle_neck_0_OUT_BIT   4
+ 
+#define Bottle_neck_0_W_BIT    4
+#define Bottle_neck_0_INC_BIT 13
+#define Bottle_neck_0_BIAS_BIT 21
 
-// conv_2
-#define CONV_2_K 3 
-#define CONV_2_S 1 
-#define CONV_2_P 1 
-#define CONV_2_IFM_CH 32 
-#define CONV_2_IFM_ROW 40 
-#define CONV_2_IFM_COL 80 
-#define CONV_2_OFM_CH 64 
-#define CONV_2_OFM_ROW 40 
-#define CONV_2_OFM_COL 80 
-#define CONV_2_SIMD 16 
-#define CONV_2_PE 8 
-#define CONV_2_IN_BIT 4 
-#define CONV_2_OUT_BIT 4 
-#define CONV_2_W_BIT 4 
-#define CONV_2_INC_BIT 12 
-#define CONV_2_BIAS_BIT 22 
-#define CONV_2_W_TILES 144 
-#define CONV_2_A_TILES 8 
-#define CONV_2_L_SHIFT 8 
+#define Bottle_neck_0_expand_ratio 1
+#define Bottle_neck_0_PE 8  //这个PE应该怎么设置啊
+#define Bottle_neck_0_S 1
+#define Bottle_neck_0_loop 1
 
-// conv_3
-#define CONV_3_K 3 
-#define CONV_3_S 1 
-#define CONV_3_P 1 
-#define CONV_3_IFM_CH 64 
-#define CONV_3_IFM_ROW 20 
-#define CONV_3_IFM_COL 40 
-#define CONV_3_OFM_CH 64 
-#define CONV_3_OFM_ROW 20 
-#define CONV_3_OFM_COL 40 
-#define CONV_3_SIMD 16 
-#define CONV_3_PE 4 
-#define CONV_3_IN_BIT 4 
-#define CONV_3_OUT_BIT 4 
-#define CONV_3_W_BIT 4 
-#define CONV_3_INC_BIT 11 
-#define CONV_3_BIAS_BIT 21 
-#define CONV_3_W_TILES 576 
-#define CONV_3_A_TILES 16 
-#define CONV_3_L_SHIFT 8 
+//bottle neck 1 t c n s 6 24 2 2
+#define Bottle_neck_1_IFM_ROW 112
+#define Bottek_neck_1_IFM_COL 112
+#define Bottle_neck_1_IFM_IN_CH 16
+#define Bottle_neck_1_IN_BIT    4
 
-// conv_4
-#define CONV_4_K 3 
-#define CONV_4_S 1 
-#define CONV_4_P 1 
-#define CONV_4_IFM_CH 64 
-#define CONV_4_IFM_ROW 10 
-#define CONV_4_IFM_COL 20 
-#define CONV_4_OFM_CH 64 
-#define CONV_4_OFM_ROW 10 
-#define CONV_4_OFM_COL 20 
-#define CONV_4_SIMD 8 
-#define CONV_4_PE 2 
-#define CONV_4_IN_BIT 4 
-#define CONV_4_OUT_BIT 4 
-#define CONV_4_W_BIT 4 
-#define CONV_4_INC_BIT 13 
-#define CONV_4_BIAS_BIT 21 
-#define CONV_4_W_TILES 2304 
-#define CONV_4_A_TILES 32 
-#define CONV_4_L_SHIFT 8 
+#define Bottle_neck_1_OFM_CH    24
+#define Bottle_neck_1_OUT_BIT   4
+ 
+#define Bottle_neck_1_W_BIT    4
+#define Bottle_neck_1_INC_BIT 13
+#define Bottle_neck_1_BIAS_BIT 21
 
-// conv_5
-#define CONV_5_K 3 
-#define CONV_5_S 1 
-#define CONV_5_P 1 
-#define CONV_5_IFM_CH 64 
-#define CONV_5_IFM_ROW 10 
-#define CONV_5_IFM_COL 20 
-#define CONV_5_OFM_CH 64 
-#define CONV_5_OFM_ROW 10 
-#define CONV_5_OFM_COL 20 
-#define CONV_5_SIMD 8 
-#define CONV_5_PE 2 
-#define CONV_5_IN_BIT 4 
-#define CONV_5_OUT_BIT 4 
-#define CONV_5_W_BIT 4 
-#define CONV_5_INC_BIT 12 
-#define CONV_5_BIAS_BIT 21 
-#define CONV_5_W_TILES 2304 
-#define CONV_5_A_TILES 32 
-#define CONV_5_L_SHIFT 8 
+#define Bottle_neck_1_expand_ratio 6
+#define Bottle_neck_1_PE 8 
+#define Bottle_neck_1_loop 2 //这个PE应该怎么设置啊
+#define Bottle_neck_1_S 2
 
-// conv_6
-#define CONV_6_K 3 
-#define CONV_6_S 1 
-#define CONV_6_P 1 
-#define CONV_6_IFM_CH 64 
-#define CONV_6_IFM_ROW 10 
-#define CONV_6_IFM_COL 20 
-#define CONV_6_OFM_CH 64 
-#define CONV_6_OFM_ROW 10 
-#define CONV_6_OFM_COL 20 
-#define CONV_6_SIMD 8 
-#define CONV_6_PE 2 
-#define CONV_6_IN_BIT 4 
-#define CONV_6_OUT_BIT 4 
-#define CONV_6_W_BIT 4 
-#define CONV_6_INC_BIT 13 
-#define CONV_6_BIAS_BIT 22 
-#define CONV_6_W_TILES 2304 
-#define CONV_6_A_TILES 32 
-#define CONV_6_L_SHIFT 8 
+//bottle neck 2 t c n s 6 32 3 2
+#define Bottle_neck_2_IFM_ROW 56
+#define Bottek_neck_2_IFM_COL 56
+#define Bottle_neck_2_IFM_IN_CH 24
+#define Bottle_neck_2_IN_BIT    4
 
-// conv_7
-#define CONV_7_K 3 
-#define CONV_7_S 1 
-#define CONV_7_P 1 
-#define CONV_7_IFM_CH 64 
-#define CONV_7_IFM_ROW 10 
-#define CONV_7_IFM_COL 20 
-#define CONV_7_OFM_CH 64 
-#define CONV_7_OFM_ROW 10 
-#define CONV_7_OFM_COL 20 
-#define CONV_7_SIMD 8 
-#define CONV_7_PE 2 
-#define CONV_7_IN_BIT 4 
-#define CONV_7_OUT_BIT 4 
-#define CONV_7_W_BIT 4 
-#define CONV_7_INC_BIT 14 
-#define CONV_7_BIAS_BIT 23 
-#define CONV_7_W_TILES 2304 
-#define CONV_7_A_TILES 32 
-#define CONV_7_L_SHIFT 8 
+#define Bottle_neck_2_OFM_CH    32
+#define Bottle_neck_2_OUT_BIT   4
+ 
+#define Bottle_neck_2_W_BIT    4
+#define Bottle_neck_2_INC_BIT 13
+#define Bottle_neck_2_BIAS_BIT 21
 
-// conv_8
-#define CONV_8_K 1 
-#define CONV_8_S 1 
-#define CONV_8_P 0 
-#define CONV_8_IFM_CH 64 
-#define CONV_8_IFM_ROW 10 
-#define CONV_8_IFM_COL 20 
-#define CONV_8_OFM_CH 36 
-#define CONV_8_OFM_ROW 10 
-#define CONV_8_OFM_COL 20 
-#define CONV_8_SIMD 8 
-#define CONV_8_PE 2 
-#define CONV_8_IN_BIT 4 
-#define CONV_8_W_BIT 4 
-#define CONV_8_W_TILES 144 
-#define CONV_8_L_SHIFT 8 
+#define Bottle_neck_2_expand_ratio 6
+#define Bottle_neck_2_PE 8 
+#define Bottle_neck_2_loop 3 //这个PE应该怎么设置啊
+#define Bottle_neck_2_S 2
 
+
+//bottle neck 3 t c n s 6 64 4 2
+#define Bottle_neck_3_IFM_ROW 28
+#define Bottek_neck_3_IFM_COL 28
+#define Bottle_neck_3_IFM_IN_CH 32
+#define Bottle_neck_3_IN_BIT    4
+
+#define Bottle_neck_3_OFM_CH    64
+#define Bottle_neck_3_OUT_BIT   4
+ 
+#define Bottle_neck_3_W_BIT    4
+#define Bottle_neck_3_INC_BIT 13
+#define Bottle_neck_3_BIAS_BIT 21
+
+#define Bottle_neck_3_expand_ratio 6
+#define Bottle_neck_3_PE 8 
+#define Bottle_neck_3_loop 4 //这个PE应该怎么设置啊
+#define Bottle_neck_3_S 2
+
+//bottle neck 4 t c n s 6 96 3 1
+#define Bottle_neck_4_IFM_ROW 14
+#define Bottek_neck_4_IFM_COL 14
+#define Bottle_neck_4_IFM_IN_CH 64
+#define Bottle_neck_4_IN_BIT    4
+
+#define Bottle_neck_4_OFM_CH    96
+#define Bottle_neck_4_OUT_BIT   4
+ 
+#define Bottle_neck_4_W_BIT    4
+#define Bottle_neck_4_INC_BIT 13
+#define Bottle_neck_4_BIAS_BIT 21
+
+#define Bottle_neck_4_expand_ratio 6
+#define Bottle_neck_4_PE 8 
+#define Bottle_neck_4_loop 3 //这个PE应该怎么设置啊
+#define Bottle_neck_4_S 1
+
+//bottle neck 5 t c n s 6 160 3 2
+#define Bottle_neck_5_IFM_ROW 14
+#define Bottek_neck_5_IFM_COL 14
+#define Bottle_neck_5_IFM_IN_CH 96
+#define Bottle_neck_5_IN_BIT    4
+
+#define Bottle_neck_5_OFM_CH    160
+#define Bottle_neck_5_OUT_BIT   4
+ 
+#define Bottle_neck_5_W_BIT    4
+#define Bottle_neck_5_INC_BIT 13
+#define Bottle_neck_5_BIAS_BIT 21
+
+#define Bottle_neck_5_expand_ratio 6
+#define Bottle_neck_5_PE 8 
+#define Bottle_neck_5_loop 3 //这个PE应该怎么设置啊
+#define Bottle_neck_5_S 2
+
+//bottle neck 6 t c n s 6 320 1 1
+#define Bottle_neck_6_IFM_ROW 7
+#define Bottek_neck_6_IFM_COL 7
+#define Bottle_neck_6_IFM_IN_CH 160
+#define Bottle_neck_6_IN_BIT    4
+
+#define Bottle_neck_6_OFM_CH    320
+#define Bottle_neck_6_OUT_BIT   4
+ 
+#define Bottle_neck_6_W_BIT    4
+#define Bottle_neck_6_INC_BIT 13
+#define Bottle_neck_6_BIAS_BIT 21
+
+#define Bottle_neck_6_expand_ratio 6
+#define Bottle_neck_6_PE 8 
+#define Bottle_neck_6_loop 1 //这个PE应该怎么设置啊
+#define Bottle_neck_6_S 1
+
+
+//conv1x1 pw 参数
+#define CONV_9_IFM_ROW 7
+#define CONV_9_IFM_COL 7
+#define CONV_9_IFM_CH  320               
+#define CONV_9_IN_BIT  4
+
+#define CONV_9_OFM_CH  1280
+#define CONV_9_OUT_BIT 4                 
+#define CONV_9_INC_BIT 13
+#define CONV_9_BIAS_BIT 21  
+#define CONV_9_W_BIT 4
+
+#define CONV_9_PE 8
+    
+//还有最后一层全连接层
+                  
+                  
+                  

@@ -665,7 +665,7 @@ void matrix_vector_act_unit_no(
 
 	// �?要保存一行数�?
 	ap_uint<SIMD*IN_BIT> row_store[INPUT_FOLD];
-#pragma HLS RESOURCE variable=row_store core=RAM_2P_BRAM
+#pragma HLS RESOURCE variable=row_store core=RAM_2P_BRAMnan
 
 	// 用来保存累加结果
 	// ap_uint<M_BIT> result_vec[PE];

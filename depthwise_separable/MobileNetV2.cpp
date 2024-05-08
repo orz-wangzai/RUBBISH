@@ -1007,11 +1007,11 @@ conv1x1_dp_bn_act<
 //µÚÊ®²ã ³Ø»¯²ã
 hls::stream<ap_uint <CONV_9_OUT_BIT * CONV_9_OFM_CH>>  avg_pool_out("avg_pool_out");
 avg_pool2d<
-            POOL_K,                 // kernel
+            7,                 // kernel
             7,
-			   7
-			   1280,
-			   CONV_9_OUT_BIT
+			7
+			1280,
+			CONV_9_OUT_BIT
             >
          (
             conv_9_out,
