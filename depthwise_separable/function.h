@@ -117,12 +117,7 @@ void padding(
 
 }
 
-/**
- * 实现量化�?活算�?
- * 使用二分查找
- * TODO
- * 丢失精度 暂时弃用
- */
+
 template <	unsigned IN_BIT,
 			unsigned OUT_BIT,
 			unsigned INC_BIT,

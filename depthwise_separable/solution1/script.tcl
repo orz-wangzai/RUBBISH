@@ -4,7 +4,7 @@
 ## Copyright (C) 1986-2018 Xilinx, Inc. All Rights Reserved.
 ############################################################
 open_project depthwise_separable
-set_top depthwise_separable
+set_top MobileNetV2
 add_files depthwise_separable/MobileNetV2.cpp
 add_files depthwise_separable/bn_qrelu2d.h
 add_files depthwise_separable/config.h

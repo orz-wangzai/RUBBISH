@@ -1,23 +1,18 @@
 // conv_0
-#define CONV_0_K 3 
-#define CONV_0_S 1 
-#define CONV_0_P 1 
+
 #define CONV_0_IFM_CH 3 
-#define CONV_0_IFM_ROW 160 
-#define CONV_0_IFM_COL 320 
-#define CONV_0_OFM_CH 16 
-#define CONV_0_OFM_ROW 160 
-#define CONV_0_OFM_COL 320 
-#define CONV_0_SIMD 3 
+#define CONV_0_IFM_ROW 224
+#define CONV_0_IFM_COL 224
+#define CONV_0_OFM_CH 32 //第一层输出通道为32
 #define CONV_0_PE 16 
 #define CONV_0_IN_BIT 8 
 #define CONV_0_OUT_BIT 4 
 #define CONV_0_W_BIT 4 
-#define CONV_0_INC_BIT 14 
+#define CONV_0_INC_BIT  14
 #define CONV_0_BIAS_BIT 26 
-#define CONV_0_W_TILES 9 
-#define CONV_0_A_TILES 1 
-#define CONV_0_L_SHIFT 8 
+#define CONV_0_SIMD     3
+#define CONV_0_S        2
+
 
 // conv_1
 #define CONV_1_K 3 

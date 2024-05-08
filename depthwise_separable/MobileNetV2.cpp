@@ -89,6 +89,8 @@ void resize_batch(hls::stream<ap_uint<24>> &in, hls::stream<ap_uint<24>> & out, 
         resize(in, out);
     }
 }
+
+
 //使用自定义数据类型当作输入输出
 void do_compute(stream<my_ap_axis >& in, stream<my_ap_axis >& out, const unsigned int reps) {
 #pragma HLS DATAFLOW
@@ -137,7 +139,7 @@ void do_compute(stream<my_ap_axis >& in, stream<my_ap_axis >& out, const unsigne
     // return;
     // 杈撳叆鏁版澁娌￠棶锟???
 #endif
-
+    //MobileNetV2 第一层 输出通道是32 步长为2
     hls::stream<ap_uint<CONV_0_OUT_BIT * CONV_0_OFM_CH>>  conv_0_out("conv_0_out");
 #pragma HLS STREAM variable=conv_0_out depth=128 dim=1
     conv3x3_bn<
@@ -156,17 +158,19 @@ void do_compute(stream<my_ap_axis >& in, stream<my_ap_axis >& out, const unsigne
 
                     CONV_0_SIMD,
                     CONV_0_PE,
-					1>
-    (
+					CONV_0_S
+               >
+    			(
                 in_stream2,
                 conv_0_w,
                 conv_0_inc,
                 conv_0_bias,
                 conv_0_out,
-                reps );
+                reps
+				);
 #ifdef DEBUG
     cout << "conv_0_out size " << conv_0_out.size() << endl;
-    // hls::stream<ap_uint<4>> res("res");
+    // hls::stream<ap_uint<4>> res(S"res");
     // StreamingDataWidthConverter_Batch<CONV_0_OUT_BIT * CONV_0_OFM_CH, 4, 1>(conv_0_out, res, 1);
     // for (int i=0; i < 16; i ++) {
     //     cout << res.read() << " ";
@@ -174,10 +178,852 @@ void do_compute(stream<my_ap_axis >& in, stream<my_ap_axis >& out, const unsigne
     // cout << endl;
     // return;
 #endif
+//第二层 IN_PUT 此时是112*112*32的4位数据
+ hls::stream<ap_uint <Bottle_neck_0_OUT_BIT * Bottle_neck_0_OFM_CH>>  Bottle_neck_0_out("Bottle_neck_0_out");
+#pragma HLS STREAM variable = Bottle_neck_0_out depth=128 dim=1
+   Inverted<
+               Bottle_neck_0_IFM_ROW,
+               Bottek_neck_0_IFM_COL,
+               Bottle_neck_0_IFM_IN_CH,
+               Bottle_neck_0_IN_BIT,
 
+               Bottle_neck_0_OFM_CH,
+               Bottle_neck_0_OUT_BIT,
+
+               Bottle_neck_0_W_BIT,
+               32,
+               Bottle_neck_0_INC_BIT,
+               Bottle_neck_0_BIAS_BIT,
+
+               Bottle_neck_0_expand_ratio,
+               Bottle_neck_0_PE,
+               Bottle_neck_0_S
+               >
+    		(
+    			conv_0_out,
+				Bottle_neck_0_weights_conv3, //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_0_weights_conv1,//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_0_weigths_conv1_dp,//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_0_inc_conv3,
+    			Bottle_neck_0_bias_3,
+
+    			Bottle_neck_0_inc_pw_1, //for normal conv1x1
+    			Bottle_neck_0_bias_pw_1,
+
+				Bottle_neck_0_inc_pw_dp,
+				Bottle_necK_0_bias_pw_dp,
+
+    			Bottle_0_out, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+#ifdef DEBUG
+    cout << "Bottle_neck_0_out " << Bottle_neck_0_out.size() << endl;
+    // hls::stream<ap_uint<4>> res(S"res");
+    // StreamingDataWidthConverter_Batch<CONV_0_OUT_BIT * CONV_0_OFM_CH, 4, 1>(conv_0_out, res, 1);
+    // for (int i=0; i < 16; i ++) {
+    //     cout << res.read() << " ";
+    // }
+    // cout << endl;
+    // return;
+#endif
+//第三层 t c n s 为 6,24,2,2
+hls::stream<ap_uint <Bottle_neck_1_OUT_BIT * Bottle_neck_1_OFM_CH>>  Bottle_neck_1_out("Bottle_neck_1_out");
+#pragma HLS STREAM variable=Bottle_neck_1_out depth=128 dim=1
+hls::stream<ap_uint <Bottle_neck_1_OUT_BIT * Bottle_neck_1_OFM_CH>>  Bottle_neck_1_temp("Bottle_neck_1_out");
+for(int i = 0; i < Bottle_neck_1_loop; i++)
+{
+   if (i == 0)
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_1_IFM_ROW,
+               Bottek_neck_1_IFM_COL,
+               Bottle_neck_1_IFM_IN_CH,
+               Bottle_neck_1_IN_BIT,
+
+               Bottle_neck_1_OFM_CH,
+               Bottle_neck_1_OUT_BIT,
+
+               Bottle_neck_1_W_BIT,
+               32,
+               Bottle_neck_1_INC_BIT,
+               Bottle_neck_1_BIAS_BIT,
+               
+               Bottle_neck_1_expand_ratio,
+               Bottle_neck_1_PE,
+               Bottle_neck_1_S
+               >
+    		(
+    			Bottle_neck_0_out,
+				Bottle_neck_1_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_1_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_1_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_1_inc_conv3[i],
+    			Bottle_neck_1_bias_3[i],
+
+    			Bottle_neck_1_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_1_bias_pw_1[i],
+
+				Bottle_neck_1_inc_pw_dp[i],
+				Bottle_necK_1_bias_pw_dp[i],
+
+    			Bottle_neck_1_temp, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+   }
+   else if (i == Bottle_neck_1_loop - 1)
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_1_IFM_ROW,
+               Bottek_neck_1_IFM_COL,
+               Bottle_neck_1_IFM_IN_CH,
+               Bottle_neck_1_IN_BIT,
+
+               Bottle_neck_1_OFM_CH,
+               Bottle_neck_1_OUT_BIT,
+
+               Bottle_neck_1_W_BIT,
+               32,
+               Bottle_neck_1_INC_BIT,
+               Bottle_neck_1_BIAS_BIT,
+               
+               Bottle_neck_1_expand_ratio,
+               Bottle_neck_1_PE,
+               Bottle_neck_1_S
+               >
+    		(
+    			Bottle_neck_1_temp,
+				Bottle_neck_1_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_1_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_1_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_1_inc_conv3[i],
+    			Bottle_neck_1_bias_3[i],
+
+    			Bottle_neck_1_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_1_bias_pw_1[i],
+
+				Bottle_neck_1_inc_pw_dp[i],
+				Bottle_necK_1_bias_pw_dp[i],
+
+    			Bottle_neck_1_out, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+      
+   }
+   else
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_1_IFM_ROW,
+               Bottek_neck_1_IFM_COL,
+               Bottle_neck_1_IFM_IN_CH,
+               Bottle_neck_1_IN_BIT,
+
+               Bottle_neck_1_OFM_CH,
+               Bottle_neck_1_OUT_BIT,
+
+               Bottle_neck_1_W_BIT,
+               32,
+               Bottle_neck_1_INC_BIT,
+               Bottle_neck_1_BIAS_BIT,
+               
+               Bottle_neck_1_expand_ratio,
+               Bottle_neck_1_PE,
+               Bottle_neck_1_S
+               >
+    		(
+    			Bottle_neck_1_temp,
+				Bottle_neck_1_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_1_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_1_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_1_inc_conv3[i],
+    			Bottle_neck_1_bias_3[i],
+
+    			Bottle_neck_1_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_1_bias_pw_1[i],
+
+				Bottle_neck_1_inc_pw_dp[i],
+				Bottle_necK_1_bias_pw_dp[i],
+
+    			Bottle_neck_1_temp, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+   } 
+}
+
+#ifdef DEBUG
+    cout << "Bottle_neck_0_out " << Bottle_neck_0_out.size() << endl;
+    // hls::stream<ap_uint<4>> res(S"res");
+    // StreamingDataWidthConverter_Batch<CONV_0_OUT_BIT * CONV_0_OFM_CH, 4, 1>(conv_0_out, res, 1);
+    // for (int i=0; i < 16; i ++) {
+    //     cout << res.read() << " ";
+    // }
+    // cout << endl;
+    // return;
+#endif
+//第四层 t c n s 为 6 32 3 2
+hls::stream<ap_uint <Bottle_neck_2_OUT_BIT * Bottle_neck_2_OFM_CH>>  Bottle_neck_2_out("Bottle_neck_2_out");
+#pragma HLS STREAM variable=Bottle_neck_2_out depth=128 dim=1
+hls::stream<ap_uint <Bottle_neck_2_OUT_BIT * Bottle_neck_2_OFM_CH>>  Bottle_neck_2_temp("Bottle_neck_2_out");
+for(int i = 0; i < Bottle_neck_2_loop; i++)
+{
+   if (i == 0)
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_2_IFM_ROW,
+               Bottek_neck_2_IFM_COL,
+               Bottle_neck_2_IFM_IN_CH,
+               Bottle_neck_2_IN_BIT,
+
+               Bottle_neck_2_OFM_CH,
+               Bottle_neck_2_OUT_BIT,
+
+               Bottle_neck_2_W_BIT,
+               32,
+               Bottle_neck_2_INC_BIT,
+               Bottle_neck_2_BIAS_BIT,
+               
+               Bottle_neck_2_expand_ratio,
+               Bottle_neck_2_PE,
+               Bottle_neck_2_S
+               >
+    		(
+    			Bottle_neck_1_out,
+				Bottle_neck_2_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_2_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_2_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_2_inc_conv3[i],
+    			Bottle_neck_2_bias_3[i],
+
+    			Bottle_neck_2_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_2_bias_pw_1[i],
+
+				Bottle_neck_2_inc_pw_dp[i],
+				Bottle_necK_2_bias_pw_dp[i],
+
+    			Bottle_neck_2_temp, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+   }
+   else if (i == Bottle_neck_2_loop - 1)
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_2_IFM_ROW,
+               Bottek_neck_2_IFM_COL,
+               Bottle_neck_2_IFM_IN_CH,
+               Bottle_neck_2_IN_BIT,
+
+               Bottle_neck_2_OFM_CH,
+               Bottle_neck_2_OUT_BIT,
+
+               Bottle_neck_2_W_BIT,
+               32,
+               Bottle_neck_2_INC_BIT,
+               Bottle_neck_2_BIAS_BIT,
+               
+               Bottle_neck_2_expand_ratio,
+               Bottle_neck_2_PE,
+               Bottle_neck_2_S
+               >
+    		(
+    			Bottle_neck_2_temp,
+				Bottle_neck_2_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_2_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_2_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_2_inc_conv3[i],
+    			Bottle_neck_2_bias_3[i],
+
+    			Bottle_neck_2_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_2_bias_pw_1[i],
+
+				Bottle_neck_2_inc_pw_dp[i],
+				Bottle_necK_2_bias_pw_dp[i],
+
+    			Bottle_neck_2_out, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+      
+   }
+   else
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_2_IFM_ROW,
+               Bottek_neck_2_IFM_COL,
+               Bottle_neck_2_IFM_IN_CH,
+               Bottle_neck_2_IN_BIT,
+
+               Bottle_neck_2_OFM_CH,
+               Bottle_neck_2_OUT_BIT,
+
+               Bottle_neck_2_W_BIT,
+               32,
+               Bottle_neck_2_INC_BIT,
+               Bottle_neck_2_BIAS_BIT,
+               
+               Bottle_neck_2_expand_ratio,
+               Bottle_neck_2_PE,
+               Bottle_neck_2_S
+               >
+    		(
+    			Bottle_neck_2_temp,
+				Bottle_neck_2_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_2_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_2_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_2_inc_conv3[i],
+    			Bottle_neck_2_bias_3[i],
+
+    			Bottle_neck_2_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_2_bias_pw_1[i],
+
+				Bottle_neck_2_inc_pw_dp[i],
+				Bottle_necK_2_bias_pw_dp[i],
+
+    			Bottle_neck_2_temp, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+   } 
+}
+
+#ifdef DEBUG
+    cout << "Bottle_neck_2_out " << Bottle_neck_0_out.size() << endl;
+    // hls::stream<ap_uint<4>> res(S"res");
+    // StreamingDataWidthConverter_Batch<CONV_0_OUT_BIT * CONV_0_OFM_CH, 4, 1>(conv_0_out, res, 1);
+    // for (int i=0; i < 16; i ++) {
+    //     cout << res.read() << " ";
+    // }
+    // cout << endl;
+    // return;
+#endif
+//第五层 t c n s 为 6 64 4 2
+hls::stream<ap_uint <Bottle_neck_3_OUT_BIT * Bottle_neck_3_OFM_CH>>  Bottle_neck_3_out("Bottle_neck_3_out");
+#pragma HLS STREAM variable=Bottle_neck_3_out depth=128 dim=1
+hls::stream<ap_uint <Bottle_neck_3_OUT_BIT * Bottle_neck_3_OFM_CH>>  Bottle_neck_3_temp("Bottle_neck_3_out");
+for(int i = 0; i < Bottle_neck_3_loop; i++)
+{
+   if (i == 0)
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_3_IFM_ROW,
+               Bottek_neck_3_IFM_COL,
+               Bottle_neck_3_IFM_IN_CH,
+               Bottle_neck_3_IN_BIT,
+
+               Bottle_neck_3_OFM_CH,
+               Bottle_neck_3_OUT_BIT,
+
+               Bottle_neck_3_W_BIT,
+               32,
+               Bottle_neck_3_INC_BIT,
+               Bottle_neck_3_BIAS_BIT,
+               
+               Bottle_neck_3_expand_ratio,
+               Bottle_neck_3_PE,
+               Bottle_neck_3_S
+               >
+    		(
+    			Bottle_neck_2_out,
+				Bottle_neck_3_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_3_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_3_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_3_inc_conv3[i],
+    			Bottle_neck_3_bias_3[i],
+
+    			Bottle_neck_3_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_3_bias_pw_1[i],
+
+				Bottle_neck_3_inc_pw_dp[i],
+				Bottle_necK_3_bias_pw_dp[i],
+
+    			Bottle_neck_3_temp, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+   }
+   else if (i == Bottle_neck_3_loop - 1)
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_3_IFM_ROW,
+               Bottek_neck_3_IFM_COL,
+               Bottle_neck_3_IFM_IN_CH,
+               Bottle_neck_3_IN_BIT,
+
+               Bottle_neck_3_OFM_CH,
+               Bottle_neck_3_OUT_BIT,
+
+               Bottle_neck_3_W_BIT,
+               32,
+               Bottle_neck_3_INC_BIT,
+               Bottle_neck_3_BIAS_BIT,
+               
+               Bottle_neck_3_expand_ratio,
+               Bottle_neck_3_PE,
+               Bottle_neck_3_S
+               >
+    		(
+    			Bottle_neck_3_temp,
+				Bottle_neck_3_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_3_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_3_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_3_inc_conv3[i],
+    			Bottle_neck_3_bias_3[i],
+
+    			Bottle_neck_3_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_3_bias_pw_1[i],
+
+				Bottle_neck_3_inc_pw_dp[i],
+				Bottle_necK_3_bias_pw_dp[i],
+
+    			Bottle_neck_3_out, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+      
+   }
+   else
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_3_IFM_ROW,
+               Bottek_neck_3_IFM_COL,
+               Bottle_neck_3_IFM_IN_CH,
+               Bottle_neck_3_IN_BIT,
+
+               Bottle_neck_3_OFM_CH,
+               Bottle_neck_3_OUT_BIT,
+
+               Bottle_neck_3_W_BIT,
+               32,
+               Bottle_neck_3_INC_BIT,
+               Bottle_neck_3_BIAS_BIT,
+               
+               Bottle_neck_3_expand_ratio,
+               Bottle_neck_3_PE,
+               Bottle_neck_3_S
+               >
+    		(
+    			Bottle_neck_3_temp,
+				Bottle_neck_3_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_3_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_3_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_3_inc_conv3[i],
+    			Bottle_neck_3_bias_3[i],
+
+    			Bottle_neck_3_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_3_bias_pw_1[i],
+
+				Bottle_neck_3_inc_pw_dp[i],
+				Bottle_necK_3_bias_pw_dp[i],
+
+    			Bottle_neck_3_temp, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+   } 
+}
+
+#ifdef DEBUG
+    cout << "Bottle_neck_3_out " << Bottle_neck_0_out.size() << endl;
+    // hls::stream<ap_uint<4>> res(S"res");
+    // StreamingDataWidthConverter_Batch<CONV_0_OUT_BIT * CONV_0_OFM_CH, 4, 1>(conv_0_out, res, 1);
+    // for (int i=0; i < 16; i ++) {
+    //     cout << res.read() << " ";
+    // }
+    // cout << endl;
+    // return;
+#endif
+//第六层 t c n s 为 6 96 3 1
+hls::stream<ap_uint <Bottle_neck_4_OUT_BIT * Bottle_neck_4_OFM_CH>>  Bottle_neck_4_out("Bottle_neck_4_out");
+#pragma HLS STREAM variable=Bottle_neck_4_out depth=128 dim=1
+hls::stream<ap_uint <Bottle_neck_4_OUT_BIT * Bottle_neck_4_OFM_CH>>  Bottle_neck_4_temp("Bottle_neck_4_out");
+for(int i = 0; i < Bottle_neck_4_loop; i++)
+{
+   if (i == 0)
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_4_IFM_ROW,
+               Bottek_neck_4_IFM_COL,
+               Bottle_neck_4_IFM_IN_CH,
+               Bottle_neck_4_IN_BIT,
+
+               Bottle_neck_4_OFM_CH,
+               Bottle_neck_4_OUT_BIT,
+
+               Bottle_neck_4_W_BIT,
+               32,
+               Bottle_neck_4_INC_BIT,
+               Bottle_neck_4_BIAS_BIT,
+               
+               Bottle_neck_4_expand_ratio,
+               Bottle_neck_4_PE,
+               Bottle_neck_4_S
+               >
+    		(
+    			Bottle_neck_3_out,
+				Bottle_neck_4_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_4_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_4_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_4_inc_conv3[i],
+    			Bottle_neck_4_bias_3[i],
+
+    			Bottle_neck_4_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_4_bias_pw_1[i],
+
+				Bottle_neck_4_inc_pw_dp[i],
+				Bottle_necK_4_bias_pw_dp[i],
+
+    			Bottle_neck_4_temp, //输出是OUT_CH IN_ROW*IN_CH
+				);
+   }
+   else if (i == Bottle_neck_4_loop - 1)
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_4_IFM_ROW,
+               Bottek_neck_4_IFM_COL,
+               Bottle_neck_4_IFM_IN_CH,
+               Bottle_neck_4_IN_BIT,
+
+               Bottle_neck_4_OFM_CH,
+               Bottle_neck_4_OUT_BIT,
+
+               Bottle_neck_4_W_BIT,
+               32,
+               Bottle_neck_4_INC_BIT,
+               Bottle_neck_4_BIAS_BIT,
+               
+               Bottle_neck_4_expand_ratio,
+               Bottle_neck_4_PE,
+               Bottle_neck_4_S
+               >
+    		(
+    			Bottle_neck_4_temp,
+				Bottle_neck_4_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_4_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_4_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_4_inc_conv3[i],
+    			Bottle_neck_4_bias_3[i],
+
+    			Bottle_neck_4_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_4_bias_pw_1[i],
+
+				Bottle_neck_4_inc_pw_dp[i],
+				Bottle_necK_4_bias_pw_dp[i],
+
+    			Bottle_neck_4_out, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+      
+   }
+   else
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_4_IFM_ROW,
+               Bottek_neck_4_IFM_COL,
+               Bottle_neck_4_IFM_IN_CH,
+               Bottle_neck_4_IN_BIT,
+
+               Bottle_neck_4_OFM_CH,
+               Bottle_neck_4_OUT_BIT,
+
+               Bottle_neck_4_W_BIT,
+               32,
+               Bottle_neck_4_INC_BIT,
+               Bottle_neck_4_BIAS_BIT,
+               
+               Bottle_neck_4_expand_ratio,
+               Bottle_neck_4_PE,
+               Bottle_neck_4_S
+               >
+    		(
+    			Bottle_neck_4_temp,
+				Bottle_neck_4_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_4_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_4_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_4_inc_conv3[i],
+    			Bottle_neck_4_bias_3[i],
+
+    			Bottle_neck_4_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_4_bias_pw_1[i],
+
+				Bottle_neck_4_inc_pw_dp[i],
+				Bottle_necK_4_bias_pw_dp[i],
+
+    			Bottle_neck_4_temp, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+   } 
 
 }
-void ultra_net(stream<my_ap_axis >& in, stream<my_ap_axis >& out, const unsigned int reps) {
+#ifdef DEBUG
+    cout << "Bottle_neck_4_out " << Bottle_neck_0_out.size() << endl;
+    // hls::stream<ap_uint<4>> res(S"res");
+    // StreamingDataWidthConverter_Batch<CONV_0_OUT_BIT * CONV_0_OFM_CH, 4, 1>(conv_0_out, res, 1);
+    // for (int i=0; i < 16; i ++) {
+    //     cout << res.read() << " ";
+    // }
+    // cout << endl;
+    // return;
+#endif
+//第七层 t c n s 为 6 160 3 2
+hls::stream<ap_uint <Bottle_neck_5_OUT_BIT * Bottle_neck_5_OFM_CH>>  Bottle_neck_5_out("Bottle_neck_5_out");
+#pragma HLS STREAM variable=Bottle_neck_5_out depth=128 dim=1
+hls::stream<ap_uint <Bottle_neck_5_OUT_BIT * Bottle_neck_5_OFM_CH>>  Bottle_neck_5_temp("Bottle_neck_5_out");
+for(int i = 0; i < Bottle_neck_5_loop; i++)
+{
+   if (i == 0)
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_5_IFM_ROW,
+               Bottek_neck_5_IFM_COL,
+               Bottle_neck_5_IFM_IN_CH,
+               Bottle_neck_5_IN_BIT,
+
+               Bottle_neck_5_OFM_CH,
+               Bottle_neck_5_OUT_BIT,
+
+               Bottle_neck_5_W_BIT,
+               32,
+               Bottle_neck_5_INC_BIT,
+               Bottle_neck_5_BIAS_BIT,
+               
+               Bottle_neck_5_expand_ratio,
+               Bottle_neck_5_PE,
+               Bottle_neck_5_S
+               >
+    		(
+    			Bottle_neck_4_out,
+				Bottle_neck_5_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_5_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_5_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_5_inc_conv3[i],
+    			Bottle_neck_5_bias_3[i],
+
+    			Bottle_neck_5_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_5_bias_pw_1[i],
+
+				Bottle_neck_5_inc_pw_dp[i],
+				Bottle_necK_5_bias_pw_dp[i],
+
+    			Bottle_neck_5_temp, //输出是OUT_CH IN_ROW*IN_CH
+				);
+   }
+   else if (i == Bottle_neck_5_loop - 1)
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_5_IFM_ROW,
+               Bottek_neck_5_IFM_COL,
+               Bottle_neck_5_IFM_IN_CH,
+               Bottle_neck_5_IN_BIT,
+
+               Bottle_neck_5_OFM_CH,
+               Bottle_neck_5_OUT_BIT,
+
+               Bottle_neck_5_W_BIT,
+               32,
+               Bottle_neck_5_INC_BIT,
+               Bottle_neck_5_BIAS_BIT,
+               
+               Bottle_neck_5_expand_ratio,
+               Bottle_neck_5_PE,
+               Bottle_neck_5_S
+               >
+    		(
+    			Bottle_neck_5_temp,
+				Bottle_neck_5_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_5_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_5_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+
+    			Bottle_neck_5_inc_conv3[i],
+    			Bottle_neck_5_bias_3[i],
+
+    			Bottle_neck_5_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_5_bias_pw_1[i],
+
+				Bottle_neck_5_inc_pw_dp[i],
+				Bottle_necK_5_bias_pw_dp[i],
+
+    			Bottle_neck_5_out, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+      
+   }
+   else
+   {
+      /* code */
+      Inverted<
+               Bottle_neck_5_IFM_ROW,
+               Bottek_neck_5_IFM_COL,
+               Bottle_neck_5_IFM_IN_CH,
+               Bottle_neck_5_IN_BIT,
+
+               Bottle_neck_5_OFM_CH,
+               Bottle_neck_5_OUT_BIT,
+
+               Bottle_neck_5_W_BIT,
+               32,
+               Bottle_neck_5_INC_BIT,
+               Bottle_neck_5_BIAS_BIT,
+               
+               Bottle_neck_5_expand_ratio,
+               Bottle_neck_5_PE,
+               Bottle_neck_5_S
+               >
+    		(
+    			Bottle_neck_5_temp,
+				Bottle_neck_5_weights_conv3[i], //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_5_weights_conv1[i],//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_5_weigths_conv1_dp[i],//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+    			Bottle_neck_5_inc_conv3[i],
+    			Bottle_neck_5_bias_3[i],
+
+    			Bottle_neck_5_inc_pw_1[i], //for normal conv1x1
+    			Bottle_neck_5_bias_pw_1[i],
+
+				Bottle_neck_5_inc_pw_dp[i],
+				Bottle_necK_5_bias_pw_dp[i],
+
+    			Bottle_neck_5_temp, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+   } 
+
+}
+#ifdef DEBUG
+    cout << "Bottle_neck_5_out " << Bottle_neck_0_out.size() << endl;
+    // hls::stream<ap_uint<4>> res(S"res");
+    // StreamingDataWidthConverter_Batch<CONV_0_OUT_BIT * CONV_0_OFM_CH, 4, 1>(conv_0_out, res, 1);
+    // for (int i=0; i < 16; i ++) {
+    //     cout << res.read() << " ";
+    // }
+    // cout << endl;
+    // return;
+#endif
+//第八层 t c n s 6 320 1 1
+//思考这里怎么改变才能让位宽下降
+ hls::stream<ap_uint <Bottle_neck_6_OUT_BIT * Bottle_neck_6_OFM_CH>>  Bottle_neck_6_out("Bottle_neck_6_out");
+#pragma HLS STREAM variable = Bottle_neck_6_out depth=128 dim=1
+   Inverted<
+               Bottle_neck_6_IFM_ROW,
+               Bottek_neck_6_IFM_COL,
+               Bottle_neck_6_IFM_IN_CH,
+               Bottle_neck_6_IN_BIT,
+
+               Bottle_neck_6_OFM_CH,
+               Bottle_neck_6_OUT_BIT,
+
+               Bottle_neck_6_W_BIT,
+               32,
+               Bottle_neck_6_INC_BIT,
+               Bottle_neck_6_BIAS_BIT,
+
+               Bottle_neck_6_expand_ratio,
+               Bottle_neck_6_PE,
+               Bottle_neck_6_S
+               >
+    		(
+    			Bottle_neck_5_out,
+				Bottle_neck_6_weights_conv3, //const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9]
+    			Bottle_neck_6_weights_conv1,//const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE]
+    			Bottle_neck_6_weigths_conv1_dp,//const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+    			Bottle_neck_6_inc_conv3,
+    			Bottle_neck_6_bias_3,
+
+    			Bottle_neck_6_inc_pw_1, //for normal conv1x1
+    			Bottle_neck_6_bias_pw_1,
+
+				Bottle_neck_6_inc_pw_dp,
+				Bottle_necK_6_bias_pw_dp,
+
+    			Bottle_6_out, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+    			reps
+				);
+#ifdef DEBUG
+    cout << "Bottle_neck_6_out " << Bottle_neck_6_out.size() << endl;
+    // hls::stream<ap_uint<4>> res(S"res");
+    // StreamingDataWidthConverter_Batch<CONV_0_OUT_BIT * CONV_0_OFM_CH, 4, 1>(conv_0_out, res, 1);
+    // for (int i=0; i < 16; i ++) {
+    //     cout << res.read() << " ";
+    // }
+    // cout << endl;
+    // return;
+#endif
+//第九层 conv2d1x1 c = 1280 
+hls::stream<ap_uint <CONV_9_OUT_BIT * CONV_9_OFM_CH>>  CONV_9_out("CONV_9_out");
+conv1x1_dp_bn_act<
+                  CONV_9_IFM_ROW,
+                  CONV_9_IFM_COL,
+                  CONV_9_IFM_CH,
+                  CONV_9_IN_BIT,
+
+                  CONV_9_OFM_CH,
+                  CONV_9_OUT_BIT,
+                  
+                  CONV_9_INC_BIT,
+                  CONV_9_BIAS_BIT,
+
+                  CONV_9_W_BIT,
+                  32,
+                  CONV_9_PE
+                  >
+                  (
+                     Bottle_neck_6_out,
+                     CONV_9_weights,
+                     CONV_9_inc,
+                     CONV_9_bias,
+                     CONV_9_out,
+                     reps
+                  );
+#ifdef DEBUG
+    cout << "conv_9_out " << conv_9_out.size() << endl;
+    // hls::stream<ap_uint<4>> res(S"res");
+    // StreamingDataWidthConverter_Batch<CONV_0_OUT_BIT * CONV_0_OFM_CH, 4, 1>(conv_0_out, res, 1);
+    // for (int i=0; i < 16; i ++) {
+    //     cout << res.read() << " ";
+    // }
+    // cout << endl;
+    // return;
+#endif
+//第十层 池化层
+hls::stream<ap_uint <CONV_9_OUT_BIT * CONV_9_OFM_CH>>  avg_pool_out("avg_pool_out");
+avg_pool2d<
+            POOL_K,                 // kernel
+            7,
+			   7
+			   1280,
+			   CONV_9_OUT_BIT
+            >
+         (
+            conv_9_out,
+            avg_pool_out, 
+            reps
+         );
+
+//全连接层
+//第十一层 卷积层
+//最后一层 SoftMax 实现分类 已放弃
+}
+void MobileNetV2(stream<my_ap_axis >& in, stream<my_ap_axis >& out, const unsigned int reps) {
 
 #pragma HLS INTERFACE axis register both port=out
 #pragma HLS INTERFACE axis register both port=in
@@ -221,305 +1067,4 @@ void ultra_net(stream<my_ap_axis >& in, stream<my_ap_axis >& out, const unsigned
     do_compute(in, out, reps);
 
 }
-
-/*
-hls::stream<ap_uint<CONV_0_OUT_BIT*CONV_0_OFM_CH>> pool_0_out("pool_0_out");
-#pragma HLS STREAM variable=pool_0_out depth=128 dim=1
-   max_pool2d< 2,
-               CONV_0_OFM_ROW,
-               CONV_0_OFM_COL,
-               CONV_0_OFM_CH,
-               CONV_0_OUT_BIT>(
-                   conv_0_out,
-                   pool_0_out,
-                   reps);
-#ifdef DEBUG
-   cout << "pool_0_out size " << pool_0_out.size() << endl;
-#endif
-
-   hls::stream<ap_uint<CONV_1_OUT_BIT * CONV_1_OFM_CH>>  conv_1_out("conv_1_out");
-#pragma HLS STREAM variable=conv_1_out depth=128 dim=1
-   conv3x3_bn_act<
-                   CONV_1_IFM_ROW,
-                   CONV_1_IFM_COL,
-                   CONV_1_IFM_CH,
-                   CONV_1_IN_BIT,
-
-                   CONV_1_OFM_CH,
-                   CONV_1_OUT_BIT,
-
-                   CONV_1_W_BIT,
-                   32,
-                   CONV_1_INC_BIT,
-                   CONV_1_BIAS_BIT,
-
-                   CONV_1_SIMD,
-                   CONV_1_PE,
-                   CONV_1_L_SHIFT>(
-               pool_0_out,
-               conv_1_w,
-               conv_1_inc,
-               conv_1_bias,
-               conv_1_out,
-               reps );
-#ifdef DEBUG
-   cout << "conv_1_out size " << conv_1_out.size() << endl;
-#endif
-   hls::stream<ap_uint<CONV_1_OUT_BIT*CONV_1_OFM_CH>> pool_1_out("pool_out");
-#pragma HLS STREAM variable=pool_1_out depth=128 dim=1
-   max_pool2d< 2,
-               CONV_1_OFM_ROW,
-               CONV_1_OFM_COL,
-               CONV_1_OFM_CH,
-               CONV_1_OUT_BIT>(
-                   conv_1_out,
-                   pool_1_out,
-                   reps);
-#ifdef DEBUG
-   cout << "pool_1_out size " << pool_1_out.size() << endl;
-#endif
-
-   hls::stream<ap_uint<CONV_2_OUT_BIT * CONV_2_OFM_CH>>  conv_2_out("conv_2_out");
-#pragma HLS STREAM variable=conv_2_out depth=128 dim=1
-   conv3x3_bn_act<
-                   CONV_2_IFM_ROW,
-                   CONV_2_IFM_COL,
-                   CONV_2_IFM_CH,
-                   CONV_2_IN_BIT,
-
-                   CONV_2_OFM_CH,
-                   CONV_2_OUT_BIT,
-
-                   CONV_2_W_BIT,
-                   32,
-                   CONV_2_INC_BIT,
-                   CONV_2_BIAS_BIT,
-
-                   CONV_2_SIMD,
-                   CONV_2_PE,
-                   CONV_2_L_SHIFT>(
-               pool_1_out,
-               conv_2_w,
-               conv_2_inc,
-               conv_2_bias,
-               conv_2_out,
-               reps );
-#ifdef DEBUG
-   cout << "conv_2_out size " << conv_2_out.size() << endl;
-#endif
-   hls::stream<ap_uint<CONV_2_OUT_BIT*CONV_2_OFM_CH>> pool_2_out("pool_out");
-#pragma HLS STREAM variable=pool_2_out depth=128 dim=1
-   max_pool2d< 2,
-               CONV_2_OFM_ROW,
-               CONV_2_OFM_COL,
-               CONV_2_OFM_CH,
-               CONV_2_OUT_BIT>(
-                   conv_2_out,
-                   pool_2_out,
-                   reps);
-#ifdef DEBUG
-   cout << "pool_2_out size " << pool_2_out.size() << endl;
-#endif
-
-   hls::stream<ap_uint<CONV_3_OUT_BIT * CONV_3_OFM_CH>>  conv_3_out("conv_3_out");
-#pragma HLS STREAM variable=conv_3_out depth=128 dim=1
-   conv3x3_bn_act<
-                   CONV_3_IFM_ROW,
-                   CONV_3_IFM_COL,
-                   CONV_3_IFM_CH,
-                   CONV_3_IN_BIT,
-
-                   CONV_3_OFM_CH,
-                   CONV_3_OUT_BIT,
-
-                   CONV_3_W_BIT,
-                   32,
-                   CONV_3_INC_BIT,
-                   CONV_3_BIAS_BIT,
-
-                   CONV_3_SIMD,
-                   CONV_3_PE,
-                   CONV_3_L_SHIFT>(
-               pool_2_out,
-               conv_3_w,
-               conv_3_inc,
-               conv_3_bias,
-               conv_3_out,
-               reps );
-#ifdef DEBUG
-   cout << "conv_3_out size " << conv_3_out.size() << endl;
-#endif
-   hls::stream<ap_uint<CONV_3_OUT_BIT*CONV_3_OFM_CH>> pool_3_out("pool_3_out");
-#pragma HLS STREAM variable=pool_3_out depth=128 dim=1
-   max_pool2d< 2,
-               CONV_3_OFM_ROW,
-               CONV_3_OFM_COL,
-               CONV_3_OFM_CH,
-               CONV_3_OUT_BIT>(
-                   conv_3_out,
-                   pool_3_out,
-                   reps);
-#ifdef DEBUG
-   cout << "pool_3_out size " << pool_3_out.size() << endl;
-#endif
-
-   hls::stream<ap_uint<CONV_4_OUT_BIT * CONV_4_OFM_CH>>  conv_4_out("conv_4_out");
-#pragma HLS STREAM variable=conv_4_out depth=128 dim=1
-   conv3x3_bn_act<
-                   CONV_4_IFM_ROW,
-                   CONV_4_IFM_COL,
-                   CONV_4_IFM_CH,
-                   CONV_4_IN_BIT,
-
-                   CONV_4_OFM_CH,
-                   CONV_4_OUT_BIT,
-
-                   CONV_4_W_BIT,
-                   32,
-                   CONV_4_INC_BIT,
-                   CONV_4_BIAS_BIT,
-
-                   CONV_4_SIMD,
-                   CONV_4_PE,
-                   CONV_4_L_SHIFT>(
-               pool_3_out,
-               conv_4_w,
-               conv_4_inc,
-               conv_4_bias,
-               conv_4_out,
-               reps );
-#ifdef DEBUG
-   cout << "conv_4_out size " << conv_4_out.size() << endl;
-#endif
-
-   hls::stream<ap_uint<CONV_5_OUT_BIT * CONV_5_OFM_CH>>  conv_5_out("conv_5_out");
-#pragma HLS STREAM variable=conv_5_out depth=128 dim=1
-   conv3x3_bn_act<
-                   CONV_5_IFM_ROW,
-                   CONV_5_IFM_COL,
-                   CONV_5_IFM_CH,
-                   CONV_5_IN_BIT,
-
-                   CONV_5_OFM_CH,
-                   CONV_5_OUT_BIT,
-
-                   CONV_5_W_BIT,
-                   32,
-                   CONV_5_INC_BIT,
-                   CONV_5_BIAS_BIT,
-
-                   CONV_5_SIMD,
-                   CONV_5_PE,
-                   CONV_5_L_SHIFT>(
-               conv_4_out,
-               conv_5_w,
-               conv_5_inc,
-               conv_5_bias,
-               conv_5_out,
-               reps );
-#ifdef DEBUG
-   cout << "conv_5_out size " << conv_5_out.size() << endl;
-#endif
-
-   hls::stream<ap_uint<CONV_6_OUT_BIT * CONV_6_OFM_CH>>  conv_6_out("conv_6_out");
-#pragma HLS STREAM variable=conv_6_out depth=128 dim=1
-   conv3x3_bn_act<
-                   CONV_6_IFM_ROW,
-                   CONV_6_IFM_COL,
-                   CONV_6_IFM_CH,
-                   CONV_6_IN_BIT,
-
-                   CONV_6_OFM_CH,
-                   CONV_6_OUT_BIT,
-
-                   CONV_6_W_BIT,
-                   32,
-                   CONV_6_INC_BIT,
-                   CONV_6_BIAS_BIT,
-
-                   CONV_6_SIMD,
-                   CONV_6_PE,
-                   CONV_6_L_SHIFT>(
-               conv_5_out,
-               conv_6_w,
-               conv_6_inc,
-               conv_6_bias,
-               conv_6_out,
-               reps );
-#ifdef DEBUG
-   cout << "conv_6_out size " << conv_6_out.size() << endl;
-#endif
-
-   hls::stream<ap_uint<CONV_7_OUT_BIT * CONV_7_OFM_CH>>  conv_7_out("conv_7_out");
-#pragma HLS STREAM variable=conv_7_out depth=128 dim=1
-   conv3x3_bn_act<
-                   CONV_7_IFM_ROW,
-                   CONV_7_IFM_COL,
-                   CONV_7_IFM_CH,
-                   CONV_7_IN_BIT,
-
-                   CONV_7_OFM_CH,
-                   CONV_7_OUT_BIT,
-
-                   CONV_7_W_BIT,
-                   32,
-                   CONV_7_INC_BIT,
-                   CONV_7_BIAS_BIT,
-
-                   CONV_7_SIMD,
-                   CONV_7_PE,
-                   CONV_7_L_SHIFT>(
-               conv_6_out,
-               conv_7_w,
-               conv_7_inc,
-               conv_7_bias,
-               conv_7_out,
-               reps );
-#ifdef DEBUG
-   cout << "conv_7_out size " << conv_7_out.size() << endl;
-   // hls::stream<ap_uint<4>> res("res");
-   // StreamingDataWidthConverter_Batch<CONV_7_OUT_BIT * CONV_7_OFM_CH, 4, 1>(conv_7_out, res, 1);
-   // for (int i=0; i < 64; i ++) {
-   //     cout << res.read() << " ";
-   // }
-   // cout << endl;
-   // return;
-#endif
-   hls::stream<ap_uint<CONV_8_IN_BIT * CONV_8_SIMD>>  conv_8_in("conv_8_in");
-#pragma HLS STREAM variable=conv_8_in depth=64 dim=1
-   StreamingDataWidthConverter_Batch<CONV_7_OFM_CH*CONV_7_OUT_BIT,
-           CONV_8_IN_BIT * CONV_8_SIMD,
-           CONV_7_OFM_ROW*CONV_7_OFM_COL>(conv_7_out, conv_8_in, reps);
-   hls::stream<ap_uint<32 * CONV_8_PE>>  conv_8_out("conv_8_out");
-#pragma HLS STREAM variable=conv_8_out depth=64 dim=1
-   conv1x1 <
-                   CONV_8_IFM_ROW,
-                   CONV_8_IFM_COL,
-                   CONV_8_IFM_CH,
-                   CONV_8_IN_BIT,
-                   CONV_8_OFM_CH,
-
-                   CONV_8_W_BIT,
-                   32,
-
-                   CONV_8_SIMD,
-                   CONV_8_PE>(
-               conv_8_in,
-               conv_8_w,
-               conv_8_out,
-               reps );
-#ifdef DEBUG
-   cout << "conv_8_out size " << conv_8_out.size() << endl;
-   // hls::stream<ap_uint<32>> res("res");
-   // StreamingDataWidthConverter_Batch<32 * CONV_8_PE, 32, 18>(conv_8_out, res, 1);
-   // for (int i=0; i < 36; i ++) {
-   //     ap_int<32> a =  res.read();
-   //     cout << a << " ";
-   // }
-   // cout << endl;
-   // return;
-#endif
-   AddLast<CONV_8_OFM_ROW*CONV_8_OFM_COL*CONV_8_OFM_CH/2>(conv_8_out, out, reps);
-*/
-
 

@@ -9,6 +9,10 @@
       <mgLog/>
       <packageLog/>
       <csimLog>
+        <logs message="ERROR: [SIM 211-100] 'csim_design' failed: compilation error(s)." projectName="depthwise_separable" solutionName="solution1" date="2024-05-08T15:33:55.146+0200"/>
+        <logs message="ERROR: [SIM 211-100] 'csim_design' failed: compilation error(s)." projectName="depthwise_separable" solutionName="solution1" date="2024-05-08T15:31:31.418+0200"/>
+        <logs message="ERROR: [SIM 211-100] 'csim_design' failed: compilation error(s)." projectName="depthwise_separable" solutionName="solution1" date="2024-05-08T15:26:19.200+0200"/>
+        <logs message="ERROR: [SIM 211-100] 'csim_design' failed: compilation error(s)." projectName="depthwise_separable" solutionName="solution1" date="2024-05-08T15:25:46.724+0200"/>
         <logs message="ERROR: [SIM 211-100] 'csim_design' failed: compilation error(s)." projectName="depthwise_separable" solutionName="solution1" date="2024-05-08T00:10:26.702+0200"/>
         <logs message="ERROR: [SIM 211-100] 'csim_design' failed: compilation error(s)." projectName="depthwise_separable" solutionName="solution1" date="2024-05-08T00:09:42.181+0200"/>
         <logs message="ERROR: [SIM 211-100] 'csim_design' failed: compilation error(s)." projectName="depthwise_separable" solutionName="solution1" date="2024-05-08T00:05:35.584+0200"/>

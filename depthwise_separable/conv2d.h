@@ -540,17 +540,17 @@ template<
 			>
 void Inverted(
 			stream<ap_uint<IN_BIT * IN_CH> >& in,
-			const ap_uint<W_BIT> weights_conv3[expand_ratio*IN_CH][9],//这里思考一下输入是多少,conv1*1 展开之后的应该是
+			const ap_uint<W_BIT> weights_conv3[expand_rhls::stream<ap_uint <CONV_9_OUT_BIT * CONV_9_OFM_CH>>  CONV_9_out("CONV_9_out");atio*IN_CH][9],//这里思考一下输入是多少,conv1*1 展开之后的应该是
 			const ap_uint<W_BIT> weights_conv1_1[PE][expand_ratio*IN_CH*IN_CH/PE],//h*w*tk
 			//const ap_uint<W_BIT> weights_conv1_2[PE][OUT_CH*IN_CH/PE],//权重理论上是1*1*IN_CH*OUT_CH //h*w*OUT_CH
-			const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],//权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 这个应该是深度可分离卷积的权重
+			const ap_uint<W_BIT> weights_conv1_3[PE][expand_ratio*IN_CH*OUT_CH/PE],//权重理论上是1*1*IN_CH*OUT_CH h*w*OUT_CH 深度可分离卷积的逐点卷积的权重
 			const ap_int<INC_BIT> inc_conv3[1][expand_ratio*IN_CH],
 			const ap_int <BIAS_BIT> bias_conv3[1][expand_ratio*IN_CH],
-			const ap_int<INC_BIT> inc_conv1_1[PE][expand_ratio*IN_CH/PE], //d
-			const ap_int<BIAS_BIT> bias_conv1_1[PE][expand_ratio*IN_CH/PE],
-			const ap_int<INC_BIT> inc_conv1_2[PE][OUT_CH/PE], //d
-			const ap_int<BIAS_BIT> bias_conv1_2[PE][OUT_CH/PE],
-			stream<ap_uint<OUT_CH*OUT_BIT>> &out, //输出是OUT_CH IN_ROW*IN_COL*IN_CH
+			const ap_int<INC_BIT> inc_conv1_1[PE][expand_ratio*IN_CH/PE], //普通卷积的BN层
+			const ap_int<BIAS_BIT> bias_conv1_1[PE][expand_ratio*IN_CH/PE],//普通卷积的偏置
+			const ap_int<INC_BIT> inc_conv1_2[PE][OUT_CH/PE], //深度可分离卷积的BN层
+			const ap_int<BIAS_BIT> bias_conv1_2[PE][OUT_CH/PE],//深度可分离卷积的偏置
+			stream<ap_uint<OUT_CH*OUT_BIT>> &out, //输出是OUT_CH IN_ROW*IN_COL
 			const unsigned reps = 1
 			)
 		{
